@@ -8,7 +8,26 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
     "*.{js,ts,jsx,tsx,mdx}"
+  ],
+  safelist: [
+    // Division badge colors - ensure these are never purged
+    'border-blue-300',
+    'text-blue-500',
+    'bg-blue-50',
+    'border-purple-300',
+    'text-purple-500',
+    'bg-purple-50',
+    'border-orange-300',
+    'text-orange-500',
+    'bg-orange-50',
+    'border-red-300',
+    'text-red-500',
+    'bg-red-50',
+    'border-gray-300',
+    'text-gray-500',
+    'bg-gray-50',
   ],
   theme: {
   	extend: {
