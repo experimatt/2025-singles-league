@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import StandingsView from "@/components/standings-view"
-import MatchForm from "@/components/match-form"
+// import MatchForm from "@/components/match-form"
 import { airtable } from "@/lib/airtable"
 import { mockPlayers, mockMatches } from "@/static/mockData"
 import type { Player, Match } from "@/types"
@@ -123,19 +123,24 @@ export default function TennisLeagueApp() {
                 <Trophy className="w-4 h-4" />
                 Standings
               </TabsTrigger>
-              <TabsTrigger value="submit" className="flex items-center gap-2">
+              <a
+                href="https://airtable.com/app4aWZlRyqQfMuZr/shrSehNBPgJkAWb2e"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center gap-2"
+              >
                 <Plus className="w-4 h-4" />
-                Submit Match
-              </TabsTrigger>
+                Submit Match Scores
+              </a>
             </TabsList>
 
             <TabsContent value="standings" className="mt-6">
               <StandingsView players={players} matches={matches} />
             </TabsContent>
 
-            <TabsContent value="submit" className="mt-6">
+            {/* <TabsContent value="submit" className="mt-6">
               <MatchForm players={players} onSubmit={handleMatchSubmit} />
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </Card>
 
