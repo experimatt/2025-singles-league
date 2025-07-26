@@ -166,10 +166,10 @@ class AirtableAPI {
 
   async testConnection() {
     try {
-      if (!AIRTABLE_PERSONAL_ACCESS_TOKEN && !process.env.NEXT_PUBLIC_AIRTABLE_API_KEY) {
+      if (!AIRTABLE_PERSONAL_ACCESS_TOKEN) {
         return {
           success: false,
-          message: 'No Airtable credentials found. Please set either NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN or NEXT_PUBLIC_AIRTABLE_API_KEY'
+          message: 'No Airtable credentials found. Please set NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN'
         }
       }
 
