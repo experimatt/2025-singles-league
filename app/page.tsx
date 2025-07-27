@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import { Trophy, Users, Plus, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge"
 import StandingsView from "@/components/standings-view"
-// import MatchForm from "@/components/match-form"
+import MatchForm from "@/components/match-form"
 import { airtable } from "@/lib/airtable"
 import { mockPlayers, mockMatches } from "@/static/mockData"
 import type { Player, Match } from "@/types"
-import { getDivisionColors } from "@/lib/utils"
+// import { getDivisionColors } from "@/lib/utils"
 
 export default function TennisLeagueApp() {
   const [players, setPlayers] = useState<Player[]>([])
@@ -18,58 +18,40 @@ export default function TennisLeagueApp() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("standings")
 
-  // Mock data for demonstration - replace with actual Airtable API calls
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
+  const loadData = async () => {
+    try {
+      setLoading(true)
 
-        // Load real data from Airtable
-        const [playersData, matchesData] = await Promise.all([airtable.getPlayers(), airtable.getMatches()])
+      // Load real data from Airtable
+      const [playersData, matchesData] = await Promise.all([airtable.getPlayers(), airtable.getMatches()])
 
-        setPlayers(playersData)
-        setMatches(matchesData)
-      } catch (error) {
-        console.error("Error loading data from Airtable:", error)
-        // Fall back to mock data on error
-        setPlayers(mockPlayers)
-        setMatches(mockMatches)
-      } finally {
-        setLoading(false)
-      }
+      setPlayers(playersData)
+      setMatches(matchesData)
+    } catch (error) {
+      console.error("Error loading data from Airtable:", error)
+      // Fall back to mock data on error
+      setPlayers(mockPlayers)
+      setMatches(mockMatches)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // Initial data load
+  useEffect(() => {
     loadData()
   }, [])
 
   const handleMatchSubmit = async (matchData: any) => {
-    try {
-      console.log("Submitting match to Airtable:", matchData)
+    console.log("Submitting match to Airtable:", matchData)
+    // Submit to Airtable - let MatchForm handle success/error states
+    await airtable.createMatch(matchData)
+  }
 
-      // Submit to Airtable
-      await airtable.createMatch(matchData)
-
-      // Add to local state for immediate UI update
-      const newMatch: Match = {
-        id: Date.now().toString(),
-        player1_id: matchData.player1_id,
-        player2_id: matchData.player2_id,
-        player1_sets: matchData.player1_score || 0,
-        player2_sets: matchData.player2_score || 0,
-        player1_games: 0, // TODO: Calculate from sets_detail if provided
-        player2_games: 0, // TODO: Calculate from sets_detail if provided
-        sets_detail: [], // TODO: Parse from detailed score input
-        winner_id: matchData.winner_id,
-        date: new Date().toISOString().split("T")[0],
-      }
-
-      setMatches((prev) => [...prev, newMatch])
-      setActiveTab("standings") // Switch back to standings after submission
-    } catch (error) {
-      console.error("Error submitting match:", error)
-      // You might want to show an error message to the user here
-      alert("Failed to submit match. Please try again.")
-    }
+  const handleMatchSuccess = () => {
+    // Refresh data and switch to standings tab
+    loadData()
+    setActiveTab("standings")
   }
 
   if (loading) {
@@ -107,23 +89,27 @@ export default function TennisLeagueApp() {
         </div>
 
         {/* Division Badges */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {/* <div className="flex flex-wrap justify-center gap-2 mb-8">
           {["Leonardo", "Donatello", "Michelangelo", "Raphael"].map((division) => (
             <Badge key={division} variant="outline" className={`px-3 py-1 w-[calc(50%-4px)] md:w-auto text-center ${getDivisionColors(division)}`}>
               {division}
             </Badge>
           ))}
-        </div>
+        </div> */}
 
         {/* Main Content */}
         <Card className="max-w-6xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="standings" className="flex items-center gap-2">
-                <Trophy className="w-4 h-4" />
-                Standings
-              </TabsTrigger>
-              <a
+                <TabsTrigger value="standings" className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4" />
+                  Standings
+                </TabsTrigger>
+                <TabsTrigger value="submit" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Submit Match Scores
+                </TabsTrigger>
+              {/* <a
                 href="https://airtable.com/app4aWZlRyqQfMuZr/shrSehNBPgJkAWb2e"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -131,16 +117,16 @@ export default function TennisLeagueApp() {
               >
                 <Plus className="w-4 h-4" />
                 Submit Match Scores
-              </a>
+              </a> */}
             </TabsList>
 
             <TabsContent value="standings" className="mt-6">
               <StandingsView players={players} matches={matches} />
             </TabsContent>
 
-            {/* <TabsContent value="submit" className="mt-6">
-              <MatchForm players={players} onSubmit={handleMatchSubmit} />
-            </TabsContent> */}
+            <TabsContent value="submit" className="mt-6">
+              <MatchForm players={players} onSubmit={handleMatchSubmit} onSuccess={handleMatchSuccess} />
+            </TabsContent>
           </Tabs>
         </Card>
 

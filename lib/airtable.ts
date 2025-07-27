@@ -142,19 +142,39 @@ class AirtableAPI {
   async createMatch(matchData: {
     player1: string
     player2: string
-    player1_score: number
-    player2_score: number
+    set1_player1_score: number | null
+    set1_player2_score: number | null
+    set2_player1_score: number | null
+    set2_player2_score: number | null
+    set3_player1_score: number | null
+    set3_player2_score: number | null
     winner: string
+    sets_score: string
+    score_summary: string
     division: string
+    completedAt: string
     notes?: string
   }) {
     try {
+      // First, get all players to find record IDs
+      const players = await this.getPlayers()
+
+      // Find record IDs for the two players
+      const player1Record = players.find(p => p.name === matchData.player1)
+      const player2Record = players.find(p => p.name === matchData.player2)
+      const winnerRecord = players.find(p => p.name === matchData.winner)
+
+      if (!player1Record || !player2Record || !winnerRecord) {
+        throw new Error(`Could not find record IDs for players: ${matchData.player1}, ${matchData.player2}`)
+      }
+
       const record = await base('Matches').create({
-        players: `${matchData.player1},${matchData.player2}`, // Comma-separated format
-        winner: matchData.winner,
-        completedAt: new Date().toISOString().split('T')[0],
-        score: `${matchData.player1_score}-${matchData.player2_score}`, // Basic score format
+        players: [player1Record.id, player2Record.id], // Array of record IDs
+        winner: [winnerRecord.id], // Array with winner's record ID
+        completedAt: matchData.completedAt, // Use the date from the form
+        score: matchData.score_summary, // Set scores from winner's perspective
         notes: matchData.notes || '',
+        source: 'API'
       })
 
       return record
