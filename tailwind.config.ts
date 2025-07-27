@@ -12,7 +12,7 @@ const config: Config = {
     "*.{js,ts,jsx,tsx,mdx}"
   ],
   safelist: [
-    // Division badge colors - ensure these are never purged
+    // Division colors - ensure these are never purged
     'border-blue-300',
     'text-blue-500',
     'bg-blue-50',

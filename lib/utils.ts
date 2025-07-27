@@ -19,3 +19,14 @@ export function getDivisionColors(division: string) {
       return "border-gray-300 text-gray-500 bg-gray-50"
   }
 }
+
+// Format name to show only last initial for privacy
+export function formatNameForPrivacy(fullName: string): string {
+  const parts = fullName.trim().split(' ')
+  if (parts.length < 2) return fullName // Return as-is if no last name
+
+  const firstName = parts[0]
+  const lastInitial = parts[parts.length - 1][0] // Get first letter of last name
+
+  return `${firstName} ${lastInitial}`
+}

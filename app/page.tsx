@@ -109,7 +109,7 @@ export default function TennisLeagueApp() {
         {/* Division Badges */}
         <div className="flex flex-wrap justify-center gap-2 mb-8">
           {["Leonardo", "Donatello", "Michelangelo", "Raphael"].map((division) => (
-            <Badge key={division} variant="outline" className={`px-3 py-1 ${getDivisionColors(division)}`}>
+            <Badge key={division} variant="outline" className={`px-3 py-1 w-[calc(50%-4px)] md:w-auto text-center ${getDivisionColors(division)}`}>
               {division}
             </Badge>
           ))}
