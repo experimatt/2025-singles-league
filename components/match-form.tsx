@@ -30,7 +30,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
     set2_player2_score: "",
     set3_player1_score: "",
     set3_player2_score: "",
-    completedAt: new Date().toISOString().split("T")[0],
+    completedAt: new Date().toLocaleDateString('en-CA'),
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,6 +42,14 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
     const p2Score = Number.parseInt(player2Score)
     if (isNaN(p1Score) || isNaN(p2Score)) return null
     return p1Score > p2Score ? 1 : 2
+  }
+
+  // Helper function to check if the match is ready for submission
+  const isSubmissionValid = () => {
+    if (!formData.player1 || !formData.player2) return false
+
+    const matchResult = getMatchResult()
+    return matchResult.setsPlayed >= 2 && (matchResult.player1Sets === 2 || matchResult.player2Sets === 2)
   }
 
   // Helper function to determine match winner and format scores
@@ -167,9 +175,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
       await onSubmit(matchData)
 
       // Show success toast
-      toast.success("Match scores recorded", {
-        description: "Thank you!",
-      })
+      toast.success("Scores recorded, thank you!")
 
       // Reset form
       setFormData({
@@ -181,7 +187,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
         set2_player2_score: "",
         set3_player1_score: "",
         set3_player2_score: "",
-        completedAt: new Date().toISOString().split("T")[0],
+        completedAt: new Date().toLocaleDateString('en-CA'),
         notes: "",
       })
 
@@ -211,12 +217,12 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
   return (
     <div className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 pb-2">
           <Send className="w-5 h-5 text-blue-600" />
-          Submit Match Scores
+          Record match scores
         </CardTitle>
         <CardDescription>
-          Enter the match details and set scores. At least 2 sets are required.
+          Enter the match details and scores below.<br />At least 2 sets are required.
         </CardDescription>
       </CardHeader>
 
@@ -260,7 +266,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
           <div className="space-y-2">
             <Label htmlFor="completedAt" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Match Date
+              Match date
             </Label>
             <Input
               id="completedAt"
@@ -275,7 +281,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             {/* Set 1 */}
             <div className="space-y-2">
               <Label>Set 1 *</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   id="set1_player1"
                   type="number"
@@ -300,7 +306,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             {/* Set 2 */}
             <div className="space-y-2">
               <Label>Set 2 *</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   id="set2_player1"
                   type="number"
@@ -325,7 +331,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             {/* Set 3 */}
             <div className="space-y-2">
               <Label>Set 3 (if applicable)</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   id="set3_player1"
                   type="number"
@@ -361,12 +367,9 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
           </div>
 
           {/* Match Result Preview */}
-          {formData.player1 &&
-           formData.player2 &&
-           matchResult.setsPlayed >= 2 &&
-           (matchResult.player1Sets === 2 || matchResult.player2Sets === 2) && (
+          {isSubmissionValid() && (
             <div className="space-y-2">
-              <Label className="text-base font-medium">Match results preview</Label>
+              <Label className="text-base font-medium">Preview of results</Label>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800 mb-1">
                   <strong>Winner:</strong> {matchResult.winner ? formatNameForPrivacy(matchResult.winner) : ""}
@@ -381,16 +384,16 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" variant="default" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || !isSubmissionValid()}>
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Submitting Match...
+                Submitting scores...
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Submit Match Result
+                Submit scores
               </>
             )}
           </Button>

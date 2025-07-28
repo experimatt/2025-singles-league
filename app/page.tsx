@@ -107,7 +107,7 @@ export default function TennisLeagueApp() {
                 </TabsTrigger>
                 <TabsTrigger value="submit" className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
-                  Submit Match Scores
+                  Submit scores
                 </TabsTrigger>
               {/* <a
                 href="https://airtable.com/app4aWZlRyqQfMuZr/shrSehNBPgJkAWb2e"
