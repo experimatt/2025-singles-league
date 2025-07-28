@@ -74,7 +74,7 @@ export default function TennisLeagueApp() {
             <Trophy className="w-10 h-10 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900">Summer Tennis League</h1>
           </div>
-          <p className="text-lg text-gray-600 mb-6">Track standings and submit match results</p>
+          <p className="text-lg text-gray-600 mb-6">Track standings and record match results</p>
 
           <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function TennisLeagueApp() {
                 </TabsTrigger>
                 <TabsTrigger value="submit" className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
-                  Submit scores
+                  Record scores
                 </TabsTrigger>
               {/* <a
                 href="https://airtable.com/app4aWZlRyqQfMuZr/shrSehNBPgJkAWb2e"

@@ -219,7 +219,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
       <CardHeader>
         <CardTitle className="flex items-center gap-2 pb-2">
           <Send className="w-5 h-5 text-blue-600" />
-          Record match scores
+          Record scores
         </CardTitle>
         <CardDescription>
           Enter the match details and scores below.<br />At least 2 sets are required.
