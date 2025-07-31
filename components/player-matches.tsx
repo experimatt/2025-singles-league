@@ -1,0 +1,281 @@
+"use client"
+
+import { useMemo } from "react"
+import { Calendar, Trophy, History } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { Player, Match } from "@/types"
+import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+
+interface PlayerMatchesProps {
+  playerId: string | null
+  isOpen: boolean
+  onClose: () => void
+  players: Player[]
+  matches: Match[]
+}
+
+export default function PlayerMatches({ 
+  playerId, 
+  isOpen, 
+  onClose, 
+  players, 
+  matches 
+}: PlayerMatchesProps) {
+  const player = players.find(p => p.id === playerId)
+  
+  const playerMatches = useMemo(() => {
+    if (!playerId) return []
+    
+    return matches
+      .filter(match => match.player1_id === playerId || match.player2_id === playerId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .map(match => {
+        const opponent = match.player1_id === playerId 
+          ? players.find(p => p.id === match.player2_id)
+          : players.find(p => p.id === match.player1_id)
+        
+        const isPlayer1 = match.player1_id === playerId
+        const playerSets = isPlayer1 ? match.player1_sets : match.player2_sets
+        const opponentSets = isPlayer1 ? match.player2_sets : match.player1_sets
+        const playerGames = isPlayer1 ? match.player1_games : match.player2_games
+        const opponentGames = isPlayer1 ? match.player2_games : match.player1_games
+        const won = match.winner_id === playerId
+        
+        return {
+          ...match,
+          opponent,
+          playerSets,
+          opponentSets,
+          playerGames,
+          opponentGames,
+          won
+        }
+      })
+  }, [playerId, matches, players])
+
+  const stats = useMemo(() => {
+    const wins = playerMatches.filter(match => match.won).length
+    const losses = playerMatches.length - wins
+    const winPercentage = playerMatches.length > 0 ? (wins / playerMatches.length) * 100 : 0
+    
+    // Calculate sets stats
+    const totalSetsWon = playerMatches.reduce((sum, match) => sum + match.playerSets, 0)
+    const totalSetsLost = playerMatches.reduce((sum, match) => sum + match.opponentSets, 0)
+    const totalSets = totalSetsWon + totalSetsLost
+    const setWinPercentage = totalSets > 0 ? (totalSetsWon / totalSets) * 100 : 0
+    
+    // Calculate games stats
+    const totalGamesWon = playerMatches.reduce((sum, match) => sum + match.playerGames, 0)
+    const totalGamesLost = playerMatches.reduce((sum, match) => sum + match.opponentGames, 0)
+    const totalGames = totalGamesWon + totalGamesLost
+    const gameWinPercentage = totalGames > 0 ? (totalGamesWon / totalGames) * 100 : 0
+    const gamesDifferential = totalGamesWon - totalGamesLost
+    
+    return { 
+      wins, 
+      losses, 
+      winPercentage, 
+      total: playerMatches.length,
+      totalSetsWon,
+      totalSetsLost,
+      setWinPercentage,
+      totalGamesWon,
+      totalGamesLost,
+      gameWinPercentage,
+      gamesDifferential
+    }
+  }, [playerMatches])
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })
+  }
+
+  const formatSetDetails = (match: typeof playerMatches[0]) => {
+    const isPlayer1 = match.player1_id === playerId
+
+    // If we have the original score string, use it (but adjust perspective if needed)
+    if (match.score) {
+      const matchWonByPlayer1 = match.winner_id === match.player1_id
+      
+      // If score is from winner's perspective and we need to flip it
+      if (matchWonByPlayer1 !== isPlayer1) {
+        // Flip the scores to show from current player's perspective
+        return match.score.split(', ').map(set => {
+          const [score1, score2] = set.split('-')
+          return `${score2}-${score1}`
+        }).join(', ')
+      }
+      
+      return match.score
+    }
+    
+    // Fallback: reconstruct from sets_detail
+    return match.sets_detail.map(set => {
+      return isPlayer1 
+        ? `${set.player1_games}-${set.player2_games}`
+        : `${set.player2_games}-${set.player1_games}`
+    }).join(', ')
+  }
+
+  if (!player) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 pb-2">
+            <History className="w-5 h-5" />
+            {formatNameForPrivacy(player.name)}'s match history
+          </DialogTitle>
+          <div className="text-sm text-muted-foreground space-y-1 flex flex-col items-start">
+            <Badge
+              variant="outline"
+              className={`text-xs ${getDivisionColors(player.division)}`}
+            >
+              {player.division}
+            </Badge>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Matches:</span> {stats.wins}-
+              {stats.losses} ({stats.winPercentage.toFixed(0)}%)
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Sets:</span> {stats.totalSetsWon}-
+              {stats.totalSetsLost} ({stats.setWinPercentage.toFixed(0)}%)
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Games:</span> {stats.totalGamesWon}-
+              {stats.totalGamesLost} ({stats.gamesDifferential > 0 ? "+" : ""}
+              {stats.gamesDifferential})
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-auto">
+          {playerMatches.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No matches played yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Opponent</TableHead>
+                      <TableHead className="text-center">Score</TableHead>
+                      <TableHead className="text-center">Result</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {playerMatches.map((match) => (
+                      <TableRow
+                        key={match.id}
+                        className={match.won ? "bg-green-50" : "bg-red-50"}
+                      >
+                        <TableCell className="text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {formatDate(match.date)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {match.opponent
+                            ? formatNameForPrivacy(match.opponent.name)
+                            : "Unknown"}
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {formatSetDetails(match)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant={match.won ? "default" : "secondary"}
+                            className={
+                              match.won
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-red-600 hover:bg-red-700 text-white"
+                            }
+                          >
+                            {match.won ? "W" : "L"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600 italic">
+                          {match.notes || ""}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {playerMatches.map((match) => (
+                  <div
+                    key={match.id}
+                    className={`p-4 rounded-lg border ${
+                      match.won
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
+                    }`}
+                  >
+                    {/* Opponent and Date */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-gray-900">
+                        {match.opponent
+                          ? formatNameForPrivacy(match.opponent.name)
+                          : "Unknown"}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {formatDate(match.date)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Score and Result */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-mono text-gray-700 text-sm">
+                        {formatSetDetails(match)}
+                      </div>
+                      <Badge
+                        variant={match.won ? "default" : "secondary"}
+                        className={
+                          match.won
+                            ? "bg-green-600 hover:bg-green-700"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                        }
+                      >
+                        {match.won ? "W" : "L"}
+                      </Badge>
+                    </div>
+
+                    {/* Notes */}
+                    {match.notes && (
+                      <div className="text-sm text-gray-600 italic">
+                        {match.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+} 

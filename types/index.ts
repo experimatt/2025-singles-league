@@ -20,6 +20,7 @@ export interface Match {
   }>
   winner_id: string
   date: string
+  score?: string  // Original score format like "6-2, 3-6, 10-9"
   notes?: string
 }
 

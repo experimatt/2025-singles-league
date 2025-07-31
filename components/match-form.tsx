@@ -203,16 +203,24 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
   const availablePlayer2Options = players.filter((p) => p.name !== formData.player1)
   const matchResult = getMatchResult()
 
-  // Transform players to combobox format
-  const playerOptions = players.map((player) => ({
-    value: player.name,
-    label: `${formatNameForPrivacy(player.name)} (${player.division})`,
-  }))
+  // Group players by division for cleaner display
+  const divisionOrder = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
 
-  const availablePlayer2ComboboxOptions = availablePlayer2Options.map((player) => ({
-    value: player.name,
-    label: `${formatNameForPrivacy(player.name)} (${player.division})`,
-  }))
+  const createPlayerGroups = (playerList: typeof players) => {
+    return divisionOrder.map(division => ({
+      label: division,
+      options: playerList
+        .filter(player => player.division === division)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(player => ({
+          value: player.name,
+          label: formatNameForPrivacy(player.name),
+        }))
+    })).filter(group => group.options.length > 0) // Only include divisions that have players
+  }
+
+  const playerGroups = createPlayerGroups(players)
+  const availablePlayer2Groups = createPlayerGroups(availablePlayer2Options)
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -239,7 +247,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             <div className="space-y-2">
               <Label htmlFor="player1">Player 1</Label>
               <Combobox
-                options={playerOptions}
+                groups={playerGroups}
                 value={formData.player1}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, player1: value }))}
                 placeholder="Select first player"
@@ -251,7 +259,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             <div className="space-y-2">
               <Label htmlFor="player2">Player 2</Label>
               <Combobox
-                options={availablePlayer2ComboboxOptions}
+                groups={availablePlayer2Groups}
                 value={formData.player2}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, player2: value }))}
                 placeholder="Select second player"

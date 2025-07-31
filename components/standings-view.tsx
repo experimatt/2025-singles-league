@@ -17,11 +17,7 @@ interface StandingsViewProps {
 
 export default function StandingsView({ players, matches }: StandingsViewProps) {
   const [selectedDivision, setSelectedDivision] = useState<string>("All Divisions")
-
   const divisions = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
-
-
-
   const playerStats = useMemo(() => {
     const stats: { [playerId: string]: PlayerStats } = {}
 
@@ -148,8 +144,6 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
     }
   }, [matches, players, selectedDivision])
 
-
-
   return (
     <div className="space-y-6">
       <CardHeader className="pb-4">
@@ -195,6 +189,8 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
           <StandingsDesktop
             filteredStats={filteredStats}
             selectedDivision={selectedDivision}
+            players={players}
+            matches={matches}
           />
         </div>
 
@@ -203,6 +199,8 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
           <StandingsMobile
             filteredStats={filteredStats}
             selectedDivision={selectedDivision}
+            players={players}
+            matches={matches}
           />
         </div>
 

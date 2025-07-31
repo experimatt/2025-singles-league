@@ -1,20 +1,27 @@
 "use client"
 
-import { useState } from "react"
-import { Trophy, Medal, Award, ChevronDown, ChevronUp } from "lucide-react"
-import type { PlayerStats } from "@/types"
+import React, { useState } from "react"
+import { Trophy, Medal, Award, ChevronDown, ChevronUp, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import type { PlayerStats, Player, Match } from "@/types"
 import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+import PlayerMatches from "./player-matches"
 
 interface StandingsMobileProps {
   filteredStats: PlayerStats[]
   selectedDivision: string
+  players: Player[]
+  matches: Match[]
 }
 
 export default function StandingsMobile({ 
   filteredStats, 
-  selectedDivision
+  selectedDivision,
+  players,
+  matches
 }: StandingsMobileProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
   const toggleCard = (playerId: string) => {
     const newExpanded = new Set(expandedCards)
@@ -111,8 +118,9 @@ export default function StandingsMobile({
     const divisions = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
     
     return (
-      <div className="space-y-4">
-        {divisions.map((division) => {
+      <>
+        <div className="space-y-4">
+          {divisions.map((division) => {
           const divisionPlayers = filteredStats.filter(stat => stat.division === division)
           if (divisionPlayers.length === 0) return null
           
@@ -129,7 +137,7 @@ export default function StandingsMobile({
                 
                 return (
                   <div 
-                    key={stat.id} 
+                    key={stat.id}
                     className={`border rounded-lg ${getDivisionBackgroundColor(stat.division)} transition-all duration-200`}
                   >
                     {/* Main Card - Always Visible */}
@@ -196,6 +204,22 @@ export default function StandingsMobile({
                             </div>
                           </div>
                         </div>
+
+                        {/* View Matches Button */}
+                        <div className="pt-3 border-t border-gray-200/50 mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedPlayerId(stat.id)
+                            }}
+                            className="w-full flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Matches
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -205,89 +229,124 @@ export default function StandingsMobile({
           )
         })}
       </div>
+
+      <PlayerMatches
+        playerId={selectedPlayerId}
+        isOpen={selectedPlayerId !== null}
+        onClose={() => setSelectedPlayerId(null)}
+        players={players}
+        matches={matches}
+      />
+      </>
     )
   }
 
   // Single division view
   return (
-    <div className="space-y-2">
-      {filteredStats.map((stat, index) => {
-        const isExpanded = expandedCards.has(stat.id)
-        
-        return (
-          <div 
-            key={stat.id} 
-            className={`border rounded-lg ${getDivisionBackgroundColor(stat.division)} transition-all duration-200`}
-          >
-            {/* Main Card - Always Visible */}
+    <>
+      <div className="space-y-2">
+        {filteredStats.map((stat, index) => {
+          const isExpanded = expandedCards.has(stat.id)
+
+          return (
             <div 
-              onClick={() => toggleCard(stat.id)}
-              className="p-4 cursor-pointer hover:bg-black/5 transition-colors"
+              key={stat.id} 
+              className={`border rounded-lg ${getDivisionBackgroundColor(stat.division)} transition-all duration-200`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Rank */}
-                  <div className="flex-shrink-0">
-                    {getRankIcon(index)}
+              {/* Main Card - Always Visible */}
+              <div
+                onClick={() => toggleCard(stat.id)}
+                className="p-4 cursor-pointer hover:bg-black/5 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    {/* Rank */}
+                    <div className="flex-shrink-0">
+                      {getRankIcon(index)}
+                    </div>
+
+                    {/* Name */}
+                    <div className="font-medium text-gray-900 flex-1">
+                      {formatNameForPrivacy(stat.name)}
+                    </div>
+
+                    {/* W-L Record */}
+                    <div className="font-semibold text-gray-700">
+                      {stat.matchWins}-{stat.matchLosses}
+                    </div>
                   </div>
-                  
-                  {/* Name */}
-                  <div className="font-medium text-gray-900 flex-1">
-                    {formatNameForPrivacy(stat.name)}
+
+                  {/* Expand/Collapse Icon */}
+                  <div className="ml-2">
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
-                  
-                  {/* W-L Record */}
-                  <div className="font-semibold text-gray-700">
-                    {stat.matchWins}-{stat.matchLosses}
-                  </div>
-                </div>
-                
-                {/* Expand/Collapse Icon */}
-                <div className="ml-2">
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  )}
                 </div>
               </div>
+
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className="px-4 pb-4 border-t border-gray-200/50">
+                  <div className="grid grid-cols-2 gap-4 pt-3 text-sm">
+                    {/* Matches */}
+                    <div>
+                      <div className="font-semibold text-gray-800 mb-1">Matches</div>
+                      <div className="text-gray-700">
+                        {stat.matchWins}-{stat.matchLosses} ({stat.matchWinPercentage.toFixed(0)}%)
+                      </div>
+                    </div>
+
+                    {/* Sets */}
+                    <div>
+                      <div className="font-semibold text-gray-800 mb-1">Sets</div>
+                      <div className="text-gray-700">
+                        {stat.setsWon}-{stat.setsLost}
+                      </div>
+                    </div>
+
+                    {/* Games */}
+                    <div className="col-span-2">
+                      <div className="font-semibold text-gray-800 mb-1">Games</div>
+                      <div className="text-gray-700">
+                        {stat.gamesWon}-{stat.gamesLost} (<span className={getDifferentialColor(stat.gamesDifferential)}>
+                          {stat.gamesDifferential > 0 ? "+" : ""}{stat.gamesDifferential}
+                        </span>)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* View Matches Button */}
+                  <div className="pt-3 border-t border-gray-200/50 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedPlayerId(stat.id)
+                      }}
+                      className="w-full flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Matches
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Expanded Details */}
-            {isExpanded && (
-              <div className="px-4 pb-4 border-t border-gray-200/50">
-                <div className="grid grid-cols-2 gap-4 pt-3 text-sm">
-                  {/* Matches */}
-                  <div>
-                    <div className="font-semibold text-gray-800 mb-1">Matches</div>
-                    <div className="text-gray-700">
-                      {stat.matchWins}-{stat.matchLosses} ({stat.matchWinPercentage.toFixed(0)}%)
-                    </div>
-                  </div>
-                  
-                  {/* Sets */}
-                  <div>
-                    <div className="font-semibold text-gray-800 mb-1">Sets</div>
-                    <div className="text-gray-700">
-                      {stat.setsWon}-{stat.setsLost}
-                    </div>
-                  </div>
-                  
-                  {/* Games */}
-                  <div className="col-span-2">
-                    <div className="font-semibold text-gray-800 mb-1">Games</div>
-                    <div className="text-gray-700">
-                      {stat.gamesWon}-{stat.gamesLost} (<span className={getDifferentialColor(stat.gamesDifferential)}>
-                        {stat.gamesDifferential > 0 ? "+" : ""}{stat.gamesDifferential}
-                      </span>)
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
+
+      <PlayerMatches
+        playerId={selectedPlayerId}
+        isOpen={selectedPlayerId !== null}
+        onClose={() => setSelectedPlayerId(null)}
+        players={players}
+        matches={matches}
+      />
+    </>
   )
 } 

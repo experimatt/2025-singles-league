@@ -27,6 +27,7 @@ export const mockMatches: Match[] = [
     ],
     winner_id: "1",
     date: "2024-01-15",
+    score: "6-4, 3-6, 10-8", // Original scores as reported
   },
   {
     id: "2",
@@ -43,6 +44,7 @@ export const mockMatches: Match[] = [
     ],
     winner_id: "4",
     date: "2024-01-16",
+    score: "6-3, 2-6, 10-8", // From winner's (player4's) perspective
   },
   {
     id: "3",
