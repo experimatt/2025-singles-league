@@ -20,6 +20,12 @@ export function getDivisionColors(division: string) {
   }
 }
 
+export function getDifferentialColor(differential: number) {
+  if (differential > 0) return "text-green-600";
+  if (differential < 0) return "text-red-600";
+  return "text-gray-600";
+};
+
 // Format name to show only last initial for privacy
 export function formatNameForPrivacy(fullName: string): string {
   const parts = fullName.trim().split(' ')

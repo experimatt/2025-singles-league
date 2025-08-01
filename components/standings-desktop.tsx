@@ -5,7 +5,7 @@ import { Trophy, Medal, Award } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import type { PlayerStats, Player, Match } from "@/types"
-import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+import { getDivisionColors, getDifferentialColor, formatNameForPrivacy } from "@/lib/utils"
 import PlayerMatches from "./player-matches"
 
 interface StandingsDesktopProps {
@@ -56,12 +56,6 @@ export default function StandingsDesktop({
           </span>
         )
     }
-  }
-
-  const getDifferentialColor = (differential: number) => {
-    if (differential > 0) return "text-green-600"
-    if (differential < 0) return "text-red-600"
-    return "text-gray-600"
   }
 
   return (

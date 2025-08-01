@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Player, Match } from "@/types"
-import { getDivisionColors, formatNameForPrivacy, formatDate } from "@/lib/utils"
+import { getDivisionColors, formatNameForPrivacy, formatDate, getDifferentialColor } from "@/lib/utils"
 
 interface PlayerMatchesProps {
   playerId: string | null
@@ -132,18 +132,23 @@ export default function PlayerMatches({
             >
               {player.division}
             </Badge>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Matches:</span> {stats.wins}-
+            <div className="flex items-center">
+              <span className="font-medium pr-1">Matches:</span> {stats.wins}-
               {stats.losses} ({stats.winPercentage.toFixed(0)}%)
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Sets:</span> {stats.totalSetsWon}-
+            <div className="flex items-center">
+              <span className="font-medium pr-1">Sets:</span> {stats.totalSetsWon}-
               {stats.totalSetsLost} ({stats.setWinPercentage.toFixed(0)}%)
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Games:</span> {stats.totalGamesWon}-
-              {stats.totalGamesLost} ({stats.gamesDifferential > 0 ? "+" : ""}
-              {stats.gamesDifferential})
+            <div className="flex items-center">
+              <span className="font-medium pr-1">Games:</span> {stats.totalGamesWon}
+              -{stats.totalGamesLost} (
+              <span className={getDifferentialColor(stats.gamesDifferential)}>
+                {`${stats.gamesDifferential > 0 ? "+" : ""}${
+                  stats.gamesDifferential
+                }`}
+              </span>
+              )
             </div>
           </div>
         </DialogHeader>

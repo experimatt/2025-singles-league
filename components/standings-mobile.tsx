@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { Trophy, Medal, Award, ChevronDown, ChevronUp, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PlayerStats, Player, Match } from "@/types"
-import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+import { getDifferentialColor, formatNameForPrivacy } from "@/lib/utils"
 import PlayerMatches from "./player-matches"
 
 interface StandingsMobileProps {
@@ -97,12 +97,6 @@ export default function StandingsMobile({
       default:
         return "text-gray-500"
     }
-  }
-
-  const getDifferentialColor = (differential: number) => {
-    if (differential > 0) return "text-green-600"
-    if (differential < 0) return "text-red-600"
-    return "text-gray-600"
   }
 
   if (filteredStats.length === 0) {
