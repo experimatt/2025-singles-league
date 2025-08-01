@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Player, Match } from "@/types"
-import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+import { getDivisionColors, formatNameForPrivacy, formatDate } from "@/lib/utils"
 
 interface PlayerMatchesProps {
   playerId: string | null
@@ -87,15 +87,6 @@ export default function PlayerMatches({
       gamesDifferential
     }
   }, [playerMatches])
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    })
-  }
 
   const formatSetDetails = (match: typeof playerMatches[0]) => {
     const isPlayer1 = match.player1_id === playerId

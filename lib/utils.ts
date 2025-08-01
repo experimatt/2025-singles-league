@@ -30,3 +30,17 @@ export function formatNameForPrivacy(fullName: string): string {
 
   return `${firstName} ${lastInitial}`
 }
+
+// Format date string to display in local (US) timezone
+export function formatDate(dateString: string): string {
+  // Parse the date string and treat it as local time, not UTC
+  // Split the date string to avoid timezone conversion issues
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year, month - 1, day) // month is 0-indexed in Date constructor
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
