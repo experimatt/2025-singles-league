@@ -139,4 +139,10 @@ This is a Next.js 14 application with TypeScript, using shadcn/ui components, Ta
 - Document complex business logic
 - Add README files for major features
 - Use proper JSDoc comments
-- Keep documentation up to date 
+- Keep documentation up to date
+
+## Code Formatting
+- Remove empty spaces on blank lines after code generation
+- Remove extra spaces at the end of lines
+- Maintain consistent indentation
+- Use proper line breaks for readability
