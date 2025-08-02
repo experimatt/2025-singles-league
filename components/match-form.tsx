@@ -12,15 +12,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { formatNameForPrivacy } from "@/lib/utils"
-import type { Player } from "@/types"
+import type { Player, Match } from "@/types"
 
 interface MatchFormProps {
   players: Player[]
+  matches: Match[]
   onSubmit: (matchData: any) => void
   onSuccess?: () => void // Optional callback for successful submission
 }
 
-export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormProps) {
+export default function MatchForm({ players, matches, onSubmit, onSuccess }: MatchFormProps) {
   const [formData, setFormData] = useState({
     player1: "",
     player2: "",
@@ -35,6 +36,36 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+
+  const existingMatchError = "A match between these players has already been reported for this day (±1)"
+
+  // Helper function to check for existing matches between two players within date range
+  const checkForExistingMatch = (player1Name: string, player2Name: string, matchDate: string) => {
+    if (!player1Name || !player2Name || !matchDate) return null
+
+    // Get player IDs from names
+    const player1 = players.find(p => p.name === player1Name)
+    const player2 = players.find(p => p.name === player2Name)
+
+    if (!player1 || !player2) return null
+
+    const selectedDate = new Date(matchDate)
+    const oneDayInMs = 24 * 60 * 60 * 1000
+
+    return matches.find(match => {
+      // Check if this match involves the same two players (in either order)
+      const matchPlayerIds = [match.player1_id, match.player2_id]
+      const samePlayers = matchPlayerIds.includes(player1.id) && matchPlayerIds.includes(player2.id)
+
+      if (!samePlayers) return false
+
+      // Check if match date is within +/- 1 day
+      const matchDate = new Date(match.date)
+      const dateDiff = Math.abs(selectedDate.getTime() - matchDate.getTime())
+
+      return dateDiff <= oneDayInMs
+    })
+  }
 
   // Helper function to determine who won a set
   const getSetWinner = (player1Score: string, player2Score: string) => {
@@ -111,6 +142,14 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
 
     if (formData.player1 === formData.player2) {
       setError("Please select different players")
+      setIsSubmitting(false)
+      return
+    }
+
+    // Check for existing match within date range
+    const existingMatch = checkForExistingMatch(formData.player1, formData.player2, formData.completedAt)
+    if (existingMatch) {
+      setError(existingMatchError)
       setIsSubmitting(false)
       return
     }
@@ -203,6 +242,11 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
   const availablePlayer2Options = players.filter((p) => p.name !== formData.player1)
   const matchResult = getMatchResult()
 
+  // Check for existing match in real-time
+  const existingMatch = formData.player1 && formData.player2 && formData.completedAt
+    ? checkForExistingMatch(formData.player1, formData.player2, formData.completedAt)
+    : null
+
   // Group players by division for cleaner display
   const divisionOrder = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
 
@@ -235,9 +279,11 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
       </CardHeader>
 
       <CardContent>
-        {error && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+        {(error || existingMatch) && (
+          <Alert className="mb-6 border-red-300 bg-red-50">
+            <AlertDescription className="text-red-600">
+              {existingMatch ? existingMatchError : error}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -375,7 +421,7 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
           </div>
 
           {/* Match Result Preview */}
-          {isSubmissionValid() && (
+          {isSubmissionValid() && !error && !existingMatch && (
             <div className="space-y-2">
               <Label className="text-base font-medium">Preview of results</Label>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -392,7 +438,12 @@ export default function MatchForm({ players, onSubmit, onSuccess }: MatchFormPro
             </div>
           )}
 
-          <Button type="submit" variant="default" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || !isSubmissionValid()}>
+          <Button
+            type="submit"
+            variant="default"
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={isSubmitting || !isSubmissionValid() || !!existingMatch}
+          >
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

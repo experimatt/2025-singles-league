@@ -6,7 +6,7 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import type { Player, Match, PlayerStats } from "@/types"
-import { getDivisionColors, formatNameForPrivacy } from "@/lib/utils"
+import { getDivisionColors } from "@/lib/utils"
 import StandingsDesktop from "./standings-desktop"
 import StandingsMobile from "./standings-mobile"
 

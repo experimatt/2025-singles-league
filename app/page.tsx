@@ -109,15 +109,6 @@ export default function TennisLeagueApp() {
                   <Plus className="w-4 h-4" />
                   Record scores
                 </TabsTrigger>
-              {/* <a
-                href="https://airtable.com/app4aWZlRyqQfMuZr/shrSehNBPgJkAWb2e"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Submit Match Scores
-              </a> */}
             </TabsList>
 
             <TabsContent value="standings" className="mt-6">
@@ -125,7 +116,7 @@ export default function TennisLeagueApp() {
             </TabsContent>
 
             <TabsContent value="submit" className="mt-6">
-              <MatchForm players={players} onSubmit={handleMatchSubmit} onSuccess={handleMatchSuccess} />
+              <MatchForm players={players} matches={matches} onSubmit={handleMatchSubmit} onSuccess={handleMatchSuccess} />
             </TabsContent>
           </Tabs>
         </Card>
