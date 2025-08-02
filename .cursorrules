@@ -1,0 +1,142 @@
+# Cursor Rules for 2025 Singles League Project
+
+## Project Overview
+This is a Next.js 14 application with TypeScript, using shadcn/ui components, Tailwind CSS, and Airtable for data storage. The project manages a tennis league with players, matches, and standings.
+
+## Technology Stack
+- Next.js 14 with App Router
+- TypeScript (strict mode enabled)
+- Tailwind CSS for styling
+- shadcn/ui components
+- Radix UI primitives
+- React Hook Form with Zod validation
+- Airtable for data storage
+- Sonner for toast notifications
+
+## Code Style & Conventions
+
+### TypeScript
+- Use strict TypeScript with proper type annotations
+- Prefer interfaces over types for object shapes
+- Use type imports: `import type { Player, Match } from "@/types"`
+- Define all interfaces in `types/index.ts` and import from there
+- Use proper generic types for React components
+
+### React & Next.js
+- Use "use client" directive for client components
+- Prefer functional components with hooks
+- Use proper dependency arrays in useEffect and useMemo
+- Implement proper error boundaries
+- Use Next.js App Router patterns
+
+### Component Structure
+- Use shadcn/ui components from `@/components/ui/`
+- Follow the component composition pattern
+- Use proper prop interfaces for all components
+- Implement responsive design with Tailwind breakpoints
+- Use proper semantic HTML elements
+
+### Styling
+- Use Tailwind CSS classes exclusively
+- Use the `cn()` utility from `@/lib/utils` for conditional classes
+- Follow mobile-first responsive design
+- Use consistent spacing and color schemes
+- Prefer utility classes over custom CSS
+
+### File Organization
+- Keep components in `components/` directory
+- UI components in `components/ui/`
+- Types in `types/index.ts`
+- Utilities in `lib/` directory
+- Use absolute imports with `@/` prefix
+
+### Data Handling
+- Use proper TypeScript interfaces for all data structures
+- Implement proper error handling for API calls
+- Use React Query or SWR for data fetching when needed
+- Validate data with Zod schemas
+
+### Performance
+- Use React.memo for expensive components
+- Implement proper useMemo and useCallback hooks
+- Lazy load components when appropriate
+- Optimize images with Next.js Image component
+
+### Accessibility
+- Use proper ARIA labels and roles
+- Ensure keyboard navigation works
+- Maintain proper color contrast ratios
+- Use semantic HTML elements
+
+### Code Quality
+- Write self-documenting code with clear variable names
+- Use consistent naming conventions (camelCase for variables, PascalCase for components)
+- Keep functions small and focused
+- Add proper JSDoc comments for complex functions
+- Use proper error handling patterns
+
+### Testing
+- Write unit tests for utility functions
+- Test component behavior, not implementation
+- Use proper mocking for external dependencies
+- Test accessibility features
+
+### Git & Development
+- Use conventional commit messages
+- Keep commits atomic and focused
+- Use feature branches for new development
+- Review code before merging
+
+## Specific Patterns for This Project
+
+### Player Data Privacy
+- Use `formatNameForPrivacy()` utility for displaying player names
+- Only show last initial for privacy in public views
+- Handle missing or incomplete data gracefully
+
+### Match Data
+- Use proper date formatting with `formatDate()` utility
+- Calculate statistics accurately (wins, losses, percentages)
+- Handle edge cases in score calculations
+- Use proper color coding for wins/losses
+
+### UI Components
+- Use Sonner for toast notifications
+- Implement responsive tables with mobile card views
+- Use proper loading states
+- Implement proper form validation
+
+### Error Handling
+- Gracefully handle missing data
+- Provide meaningful error messages
+- Use proper fallback UI components
+- Log errors appropriately
+
+## Anti-Patterns to Avoid
+- Don't use inline styles
+- Don't create custom CSS when Tailwind utilities exist
+- Don't duplicate type definitions across files
+- Don't use `any` type - always provide proper types
+- Don't ignore TypeScript errors
+- Don't use console.log in production code
+- Don't hardcode values that should be configurable
+
+## Performance Guidelines
+- Use proper React key props for lists
+- Implement proper memoization
+- Avoid unnecessary re-renders
+- Use proper image optimization
+- Implement proper loading states
+
+## Security Considerations
+- Validate all user inputs
+- Sanitize data before display
+- Use proper authentication when needed
+- Handle sensitive data appropriately
+- Follow OWASP guidelines
+
+## Documentation
+- Document complex business logic
+- Add README files for major features
+- Use proper JSDoc comments
+- Keep documentation up to date 
