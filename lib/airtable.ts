@@ -38,30 +38,30 @@ class AirtableAPI {
       return records.map(record => {
         // Get player record IDs from the players array
         const playersArray = record.get('players') as string[] || []
-        const player1_id = playersArray[0] || ''
-        const player2_id = playersArray[1] || ''
+        const player1Id = playersArray[0] || ''
+        const player2Id = playersArray[1] || ''
 
         // Handle winner field (it's an array of record IDs)
         const winnerIds = record.get('winner') as string[] || []
-        const winner_id = winnerIds[0] || ''
+        const winnerId = winnerIds[0] || ''
 
         // Parse score field to calculate detailed scoring
         const scoreField = record.get('score') as string || ''
-        let player1_sets = 0
-        let player2_sets = 0
+        let player1Sets = 0
+        let player2Sets = 0
         let player1_total_games = 0
         let player2_total_games = 0
-        const sets_detail: Array<{
-          player1_games: number
-          player2_games: number
-          set_winner_id: string
+        const setsDetail: Array<{
+          player1Games: number
+          player2Games: number
+          setWinnerId: string
         }> = []
 
-        if (scoreField && winner_id) {
+        if (scoreField && winnerId) {
           // Parse scores like "6-2, 6-0" or "6-0, 3-6, 11-9"
           // Scores are reported from the WINNER'S perspective
           const sets = scoreField.split(',').map(set => set.trim())
-          const winnerIsPlayer1 = winner_id === player1_id
+          const winnerIsPlayer1 = winnerId === player1Id
 
           sets.forEach((set, setIndex) => {
             const scores = set.split('-').map(s => parseInt(s.trim()) || 0)
@@ -100,20 +100,20 @@ class AirtableAPI {
               player2_total_games += p2Games
 
               // Determine set winner ID
-              let set_winner_id = ''
+              let setWinnerId = ''
               if (p1Score > p2Score) {
-                player1_sets++
-                set_winner_id = player1_id
+                player1Sets++
+                setWinnerId = player1Id
               } else if (p2Score > p1Score) {
-                player2_sets++
-                set_winner_id = player2_id
+                player2Sets++
+                setWinnerId = player2Id
               }
 
               // Store set details (keep original scores for display)
-              sets_detail.push({
-                player1_games: setIndex === 2 ? p1Score : p1Games,
-                player2_games: setIndex === 2 ? p2Score : p2Games,
-                set_winner_id
+              setsDetail.push({
+                player1Games: setIndex === 2 ? p1Score : p1Games,
+                player2Games: setIndex === 2 ? p2Score : p2Games,
+                setWinnerId
               })
             }
           })
@@ -121,14 +121,14 @@ class AirtableAPI {
 
         return {
           id: record.id,
-          player1_id,
-          player2_id,
-          player1_sets,
-          player2_sets,
-          player1_games: player1_total_games,
-          player2_games: player2_total_games,
-          sets_detail,
-          winner_id,
+          player1Id,
+          player2Id,
+          player1Sets,
+          player2Sets,
+          player1Games: player1_total_games,
+          player2Games: player2_total_games,
+          setsDetail,
+          winnerId,
           date: record.get('completedAt') as string || '',
           notes: record.get('notes') as string || '',
         }
@@ -142,12 +142,12 @@ class AirtableAPI {
   async createMatch(matchData: {
     player1: string
     player2: string
-    set1_player1_score: number | null
-    set1_player2_score: number | null
-    set2_player1_score: number | null
-    set2_player2_score: number | null
-    set3_player1_score: number | null
-    set3_player2_score: number | null
+    set1Player1Score: number | null
+    set1Player2Score: number | null
+    set2Player1Score: number | null
+    set2Player2Score: number | null
+    set3Player1Score: number | null
+    set3Player2Score: number | null
     winner: string
     sets_score: string
     score_summary: string

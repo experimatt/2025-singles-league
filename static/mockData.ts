@@ -14,82 +14,82 @@ export const mockPlayers: Player[] = [
 export const mockMatches: Match[] = [
   {
     id: "1",
-    player1_id: "1",
-    player2_id: "2",
-    player1_sets: 2,
-    player2_sets: 1,
-    player1_games: 13, // 6+3+1 (tiebreak counts as 1 game)
-    player2_games: 7,  // 4+6+0 (lost tiebreak)
-    sets_detail: [
-      { player1_games: 6, player2_games: 4, set_winner_id: "1" },
-      { player1_games: 3, player2_games: 6, set_winner_id: "2" },
-      { player1_games: 10, player2_games: 8, set_winner_id: "1" }, // Tiebreak score shown
+    player1Id: "1",
+    player2Id: "2",
+    player1Sets: 2,
+    player2Sets: 1,
+    player1Games: 13, // 6+3+1 (tiebreak counts as 1 game)
+    player2Games: 7,  // 4+6+0 (lost tiebreak)
+    setsDetail: [
+      { player1Games: 6, player2Games: 4, setWinnerId: "1" },
+      { player1Games: 3, player2Games: 6, setWinnerId: "2" },
+      { player1Games: 10, player2Games: 8, setWinnerId: "1" }, // Tiebreak score shown
     ],
-    winner_id: "1",
+    winnerId: "1",
     date: "2024-01-15",
     score: "6-4, 3-6, 10-8", // Original scores as reported
   },
   {
     id: "2",
-    player1_id: "3",
-    player2_id: "4",
-    player1_sets: 1,
-    player2_sets: 2,
-    player1_games: 10, // 3+6+1 (tiebreak)
-    player2_games: 12, // 6+2+0 (lost tiebreak)
-    sets_detail: [
-      { player1_games: 3, player2_games: 6, set_winner_id: "4" },
-      { player1_games: 6, player2_games: 2, set_winner_id: "3" },
-      { player1_games: 8, player2_games: 10, set_winner_id: "4" }, // Tiebreak
+    player1Id: "3",
+    player2Id: "4",
+    player1Sets: 1,
+    player2Sets: 2,
+    player1Games: 10, // 3+6+1 (tiebreak)
+    player2Games: 12, // 6+2+0 (lost tiebreak)
+    setsDetail: [
+      { player1Games: 3, player2Games: 6, setWinnerId: "4" },
+      { player1Games: 6, player2Games: 2, setWinnerId: "3" },
+      { player1Games: 8, player2Games: 10, setWinnerId: "4" }, // Tiebreak
     ],
-    winner_id: "4",
+    winnerId: "4",
     date: "2024-01-16",
     score: "6-3, 2-6, 10-8", // From winner's (player4's) perspective
   },
   {
     id: "3",
-    player1_id: "5",
-    player2_id: "6",
-    player1_sets: 2,
-    player2_sets: 0,
-    player1_games: 12, // 6+6 (straight sets)
-    player2_games: 4,  // 2+2
-    sets_detail: [
-      { player1_games: 6, player2_games: 2, set_winner_id: "5" },
-      { player1_games: 6, player2_games: 2, set_winner_id: "5" },
+    player1Id: "5",
+    player2Id: "6",
+    player1Sets: 2,
+    player2Sets: 0,
+    player1Games: 12, // 6+6 (straight sets)
+    player2Games: 4,  // 2+2
+    setsDetail: [
+      { player1Games: 6, player2Games: 2, setWinnerId: "5" },
+      { player1Games: 6, player2Games: 2, setWinnerId: "5" },
     ],
-    winner_id: "5",
+    winnerId: "5",
     date: "2024-01-17",
   },
   {
     id: "4",
-    player1_id: "7",
-    player2_id: "8",
-    player1_sets: 1,
-    player2_sets: 2,
-    player1_games: 11, // 4+6+1 (tiebreak)
-    player2_games: 12, // 6+4+0 (lost tiebreak)
-    sets_detail: [
-      { player1_games: 4, player2_games: 6, set_winner_id: "8" },
-      { player1_games: 6, player2_games: 4, set_winner_id: "7" },
-      { player1_games: 10, player2_games: 12, set_winner_id: "8" }, // Close tiebreak
+    player1Id: "7",
+    player2Id: "8",
+    player1Sets: 1,
+    player2Sets: 2,
+    player1Games: 11, // 4+6+1 (tiebreak)
+    player2Games: 12, // 6+4+0 (lost tiebreak)
+    setsDetail: [
+      { player1Games: 4, player2Games: 6, setWinnerId: "8" },
+      { player1Games: 6, player2Games: 4, setWinnerId: "7" },
+      { player1Games: 10, player2Games: 12, setWinnerId: "8" }, // Close tiebreak
     ],
-    winner_id: "8",
+    winnerId: "8",
     date: "2024-01-18",
   },
   {
     id: "5",
-    player1_id: "1",
-    player2_id: "3",
-    player1_sets: 2,
-    player2_sets: 0,
-    player1_games: 12, // 6+6 (straight sets)
-    player2_games: 6,  // 3+3
-    sets_detail: [
-      { player1_games: 6, player2_games: 3, set_winner_id: "1" },
-      { player1_games: 6, player2_games: 3, set_winner_id: "1" },
+    player1Id: "1",
+    player2Id: "3",
+    player1Sets: 2,
+    player2Sets: 0,
+    player1Games: 12, // 6+6 (straight sets)
+    player2Games: 6,  // 3+3
+    setsDetail: [
+      { player1Games: 6, player2Games: 3, setWinnerId: "1" },
+      { player1Games: 6, player2Games: 3, setWinnerId: "1" },
     ],
-    winner_id: "1",
+    winnerId: "1",
     date: "2024-01-19",
   },
 ]

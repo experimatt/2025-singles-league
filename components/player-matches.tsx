@@ -29,19 +29,19 @@ export default function PlayerMatches({
     if (!playerId) return []
     
     return matches
-      .filter(match => match.player1_id === playerId || match.player2_id === playerId)
+      .filter(match => match.player1Id === playerId || match.player2Id === playerId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .map(match => {
-        const opponent = match.player1_id === playerId 
-          ? players.find(p => p.id === match.player2_id)
-          : players.find(p => p.id === match.player1_id)
+        const opponent = match.player1Id === playerId
+          ? players.find(p => p.id === match.player2Id)
+          : players.find(p => p.id === match.player1Id)
         
-        const isPlayer1 = match.player1_id === playerId
-        const playerSets = isPlayer1 ? match.player1_sets : match.player2_sets
-        const opponentSets = isPlayer1 ? match.player2_sets : match.player1_sets
-        const playerGames = isPlayer1 ? match.player1_games : match.player2_games
-        const opponentGames = isPlayer1 ? match.player2_games : match.player1_games
-        const won = match.winner_id === playerId
+        const isPlayer1 = match.player1Id === playerId
+        const playerSets = isPlayer1 ? match.player1Sets : match.player2Sets
+        const opponentSets = isPlayer1 ? match.player2Sets : match.player1Sets
+        const playerGames = isPlayer1 ? match.player1Games : match.player2Games
+        const opponentGames = isPlayer1 ? match.player2Games : match.player1Games
+        const won = match.winnerId === playerId
         
         return {
           ...match,
@@ -89,11 +89,11 @@ export default function PlayerMatches({
   }, [playerMatches])
 
   const formatSetDetails = (match: typeof playerMatches[0]) => {
-    const isPlayer1 = match.player1_id === playerId
+    const isPlayer1 = match.player1Id === playerId
 
     // If we have the original score string, use it (but adjust perspective if needed)
     if (match.score) {
-      const matchWonByPlayer1 = match.winner_id === match.player1_id
+      const matchWonByPlayer1 = match.winnerId === match.player1Id
       
       // If score is from winner's perspective and we need to flip it
       if (matchWonByPlayer1 !== isPlayer1) {
@@ -107,11 +107,11 @@ export default function PlayerMatches({
       return match.score
     }
     
-    // Fallback: reconstruct from sets_detail
-    return match.sets_detail.map(set => {
+    // Fallback: reconstruct from setsDetail
+    return match.setsDetail.map(set => {
       return isPlayer1 
-        ? `${set.player1_games}-${set.player2_games}`
-        : `${set.player2_games}-${set.player1_games}`
+        ? `${set.player1Games}-${set.player2Games}`
+        : `${set.player2Games}-${set.player1Games}`
     }).join(', ')
   }
 
@@ -125,7 +125,8 @@ export default function PlayerMatches({
             <History className="w-5 h-5" />
             {formatNameForPrivacy(player.name)}'s match history
           </DialogTitle>
-          <div className="text-sm text-muted-foreground space-y-1 flex flex-col items-start">
+          <DialogDescription asChild>
+            <div className="text-sm text-muted-foreground space-y-1 flex flex-col items-start">
             <Badge
               variant="outline"
               className={`text-xs ${getDivisionColors(player.division)}`}
@@ -151,6 +152,7 @@ export default function PlayerMatches({
               )
             </div>
           </div>
+        </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">

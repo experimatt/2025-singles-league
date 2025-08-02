@@ -43,35 +43,35 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
 
     // Calculate stats from matches using player IDs
     matches.forEach((match) => {
-      const { player1_id, player2_id, winner_id, player1_sets, player2_sets, player1_games, player2_games } = match
+      const { player1Id, player2Id, winnerId, player1Sets, player2Sets, player1Games, player2Games } = match
 
-      if (stats[player1_id]) {
-        stats[player1_id].totalMatches++
-        stats[player1_id].setsWon += player1_sets
-        stats[player1_id].setsLost += player2_sets
-        stats[player1_id].gamesWon += player1_games
-        stats[player1_id].gamesLost += player2_games
+              if (stats[player1Id]) {
+          stats[player1Id].totalMatches++
+          stats[player1Id].setsWon += player1Sets
+          stats[player1Id].setsLost += player2Sets
+          stats[player1Id].gamesWon += player1Games
+          stats[player1Id].gamesLost += player2Games
 
-        if (winner_id === player1_id) {
-          stats[player1_id].matchWins++
-        } else {
-          stats[player1_id].matchLosses++
+          if (winnerId === player1Id) {
+            stats[player1Id].matchWins++
+          } else {
+            stats[player1Id].matchLosses++
+          }
         }
-      }
 
-      if (stats[player2_id]) {
-        stats[player2_id].totalMatches++
-        stats[player2_id].setsWon += player2_sets
-        stats[player2_id].setsLost += player1_sets
-        stats[player2_id].gamesWon += player2_games
-        stats[player2_id].gamesLost += player1_games
+        if (stats[player2Id]) {
+          stats[player2Id].totalMatches++
+          stats[player2Id].setsWon += player2Sets
+          stats[player2Id].setsLost += player1Sets
+          stats[player2Id].gamesWon += player2Games
+          stats[player2Id].gamesLost += player1Games
 
-        if (winner_id === player2_id) {
-          stats[player2_id].matchWins++
-        } else {
-          stats[player2_id].matchLosses++
+          if (winnerId === player2Id) {
+            stats[player2Id].matchWins++
+          } else {
+            stats[player2Id].matchLosses++
+          }
         }
-      }
     })
 
     // Calculate win percentages and differentials
@@ -137,8 +137,8 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
     } else {
       // Count matches where at least one player is in the selected division
       return matches.filter(match => {
-        const player1 = players.find(p => p.id === match.player1_id)
-        const player2 = players.find(p => p.id === match.player2_id)
+        const player1 = players.find(p => p.id === match.player1Id)
+        const player2 = players.find(p => p.id === match.player2Id)
         return player1?.division === selectedDivision || player2?.division === selectedDivision
       }).length
     }

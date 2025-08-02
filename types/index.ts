@@ -7,18 +7,18 @@ export interface Player {
 
 export interface Match {
   id: string
-  player1_id: string
-  player2_id: string
-  player1_sets: number
-  player2_sets: number
-  player1_games: number
-  player2_games: number
-  sets_detail: Array<{
-    player1_games: number
-    player2_games: number
-    set_winner_id: string
+  player1Id: string
+  player2Id: string
+  player1Sets: number
+  player2Sets: number
+  player1Games: number
+  player2Games: number
+  setsDetail: Array<{
+    player1Games: number
+    player2Games: number
+    setWinnerId: string
   }>
-  winner_id: string
+  winnerId: string
   date: string
   score?: string  // Original score format like "6-2, 3-6, 10-9"
   notes?: string
