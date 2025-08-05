@@ -75,11 +75,41 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     return p1Score > p2Score ? 1 : 2
   }
 
+  // Helper function to validate pro set score (8 or 10 games, winning by 2)
+  const isValidProSet = (player1Score: string, player2Score: string) => {
+    const p1Score = Number.parseInt(player1Score)
+    const p2Score = Number.parseInt(player2Score)
+
+    if (isNaN(p1Score) || isNaN(p2Score)) return false
+
+    // Pro set must be to 8 or 10 games
+    const maxScore = Math.max(p1Score, p2Score)
+    if (maxScore !== 8 && maxScore !== 10) return false
+
+    // Must win by 2 games
+    const scoreDiff = Math.abs(p1Score - p2Score)
+    if (scoreDiff < 2) return false
+
+    return true
+  }
+
   // Helper function to check if the match is ready for submission
   const isSubmissionValid = () => {
     if (!formData.player1 || !formData.player2) return false
 
     const matchResult = getMatchResult()
+
+    // Check for pro set match (single set to 8 or 10)
+    const hasSet1 = formData.set1Player1Score && formData.set1Player2Score
+    const hasSet2 = formData.set2Player1Score && formData.set2Player2Score
+    const hasSet3 = formData.set3Player1Score && formData.set3Player2Score
+
+    // If only set 1 has scores, check if it's a valid pro set
+    if (hasSet1 && !hasSet2 && !hasSet3) {
+      return isValidProSet(formData.set1Player1Score, formData.set1Player2Score)
+    }
+
+    // Otherwise, require at least 2 sets with a winner
     return matchResult.setsPlayed >= 2 && (matchResult.player1Sets === 2 || matchResult.player2Sets === 2)
   }
 
@@ -104,16 +134,34 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     let player2Sets = 0
     const setResults = []
 
-    for (let i = 0; i < sets.length; i++) {
-      const set = sets[i]
-      if (set.p1 && set.p2) {
-        const winner = getSetWinner(set.p1, set.p2)
-        if (winner === 1) {
-          player1Sets++
-          setResults.push(`${set.p1}-${set.p2}`)
-        } else if (winner === 2) {
-          player2Sets++
-          setResults.push(`${set.p2}-${set.p1}`)
+    // Check if this is a pro set match (only set 1 has scores)
+    const hasSet1 = formData.set1Player1Score && formData.set1Player2Score
+    const hasSet2 = formData.set2Player1Score && formData.set2Player2Score
+    const hasSet3 = formData.set3Player1Score && formData.set3Player2Score
+
+    if (hasSet1 && !hasSet2 && !hasSet3 && isValidProSet(formData.set1Player1Score, formData.set1Player2Score)) {
+      // Pro set match
+      const winner = getSetWinner(formData.set1Player1Score, formData.set1Player2Score)
+      if (winner === 1) {
+        player1Sets = 1
+        setResults.push(`${formData.set1Player1Score}-${formData.set1Player2Score}`)
+      } else if (winner === 2) {
+        player2Sets = 1
+        setResults.push(`${formData.set1Player2Score}-${formData.set1Player1Score}`)
+      }
+    } else {
+      // Standard match
+      for (let i = 0; i < sets.length; i++) {
+        const set = sets[i]
+        if (set.p1 && set.p2) {
+          const winner = getSetWinner(set.p1, set.p2)
+          if (winner === 1) {
+            player1Sets++
+            setResults.push(`${set.p1}-${set.p2}`)
+          } else if (winner === 2) {
+            player2Sets++
+            setResults.push(`${set.p2}-${set.p1}`)
+          }
         }
       }
     }
@@ -154,12 +202,19 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
       return
     }
 
-    // Check that at least two sets have scores
+    // Check for valid match format
     const hasSet1 = formData.set1Player1Score && formData.set1Player2Score
     const hasSet2 = formData.set2Player1Score && formData.set2Player2Score
     const hasSet3 = formData.set3Player1Score && formData.set3Player2Score
 
-    if (!hasSet1 || !hasSet2) {
+    // Check if this is a pro set match (only set 1 filled)
+    if (hasSet1 && !hasSet2 && !hasSet3) {
+      if (!isValidProSet(formData.set1Player1Score, formData.set1Player2Score)) {
+        setError("Pro set must be to 8 or 10 games with a 2-game margin")
+        setIsSubmitting(false)
+        return
+      }
+    } else if (!hasSet1 || !hasSet2) {
       setError("Please enter scores for at least the first two sets")
       setIsSubmitting(false)
       return
@@ -274,7 +329,11 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
           Record scores
         </CardTitle>
         <CardDescription>
-          Enter the match details and scores below.<br />At least 2 sets are required.
+          Enter the match details and scores below.
+          <br />
+          Standard matches require at least 2 sets.
+          <br />
+          Pro set matches (to 8 or 10 games) only require 1 set.
         </CardDescription>
       </CardHeader>
 
@@ -295,7 +354,9 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               <Combobox
                 groups={playerGroups}
                 value={formData.player1}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, player1: value }))}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, player1: value }))
+                }
                 placeholder="Select first player"
                 searchPlaceholder="Search players..."
                 emptyText="No players found."
@@ -307,7 +368,9 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               <Combobox
                 groups={availablePlayer2Groups}
                 value={formData.player2}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, player2: value }))}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, player2: value }))
+                }
                 placeholder="Select second player"
                 searchPlaceholder="Search players..."
                 emptyText="No players found."
@@ -326,33 +389,69 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               id="completedAt"
               type="date"
               value={formData.completedAt}
-              onChange={(e) => setFormData((prev) => ({ ...prev, completedAt: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  completedAt: e.target.value,
+                }))
+              }
             />
           </div>
 
           {/* Set Scores */}
           <div className="space-y-4">
+            {/* <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+              <strong>Match Formats:</strong><br />
+              • <strong>Standard:</strong> Best of 3 sets (6 games per set)<br />
+              • <strong>Pro set:</strong> Single set to 8 or 10 games (win by 2)
+            </div> */}
             {/* Set 1 */}
             <div className="space-y-2">
-              <Label>Set 1 *</Label>
+              <Label>Set 1 (or pro set) *</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   id="set1_player1"
                   type="number"
                   min="0"
                   value={formData.set1Player1Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set1Player1Score: e.target.value }))}
-                  placeholder={`${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
-                  aria-label={`Set 1 ${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set1Player1Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
+                  aria-label={`Set 1 ${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
                 />
                 <Input
                   id="set1_player2"
                   type="number"
                   min="0"
                   value={formData.set1Player2Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set1Player2Score: e.target.value }))}
-                  placeholder={`${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
-                  aria-label={`Set 1 ${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set1Player2Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
+                  aria-label={`Set 1 ${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
                 />
               </div>
             </div>
@@ -366,18 +465,44 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   type="number"
                   min="0"
                   value={formData.set2Player1Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set2Player1Score: e.target.value }))}
-                  placeholder={`${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
-                  aria-label={`Set 2 ${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set2Player1Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
+                  aria-label={`Set 2 ${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
                 />
                 <Input
                   id="set2_player2"
                   type="number"
                   min="0"
                   value={formData.set2Player2Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set2Player2Score: e.target.value }))}
-                  placeholder={`${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
-                  aria-label={`Set 2 ${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set2Player2Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
+                  aria-label={`Set 2 ${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
                 />
               </div>
             </div>
@@ -391,18 +516,44 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   type="number"
                   min="0"
                   value={formData.set3Player1Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set3Player1Score: e.target.value }))}
-                  placeholder={`${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
-                  aria-label={`Set 3 ${formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set3Player1Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
+                  aria-label={`Set 3 ${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
                 />
                 <Input
                   id="set3_player2"
                   type="number"
                   min="0"
                   value={formData.set3Player2Score}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, set3Player2Score: e.target.value }))}
-                  placeholder={`${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
-                  aria-label={`Set 3 ${formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"} score`}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set3Player2Score: e.target.value,
+                    }))
+                  }
+                  placeholder={`${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
+                  aria-label={`Set 3 ${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
+                  } score`}
                 />
               </div>
             </div>
@@ -414,7 +565,9 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
             <Textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
               placeholder="Any additional notes about the match..."
               rows={3}
             />
@@ -423,13 +576,19 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
           {/* Match Result Preview */}
           {isSubmissionValid() && !error && !existingMatch && (
             <div className="space-y-2">
-              <Label className="text-base font-medium">Preview of results</Label>
+              <Label className="text-base font-medium">
+                Preview of results
+              </Label>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800 mb-1">
-                  <strong>Winner:</strong> {matchResult.winner ? formatNameForPrivacy(matchResult.winner) : ""}
+                  <strong>Winner:</strong>{" "}
+                  {matchResult.winner
+                    ? formatNameForPrivacy(matchResult.winner)
+                    : ""}
                 </p>
                 <p className="text-sm text-blue-800 mb-1">
-                  <strong>Sets:</strong> {matchResult.player1Sets}-{matchResult.player2Sets}
+                  <strong>Sets:</strong> {matchResult.player1Sets}-
+                  {matchResult.player2Sets}
                 </p>
                 <p className="text-sm text-blue-800">
                   <strong>Score:</strong> {matchResult.setResults.join(", ")}
@@ -459,5 +618,5 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
         </form>
       </CardContent>
     </div>
-  )
+  );
 }
