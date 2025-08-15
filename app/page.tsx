@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import StandingsView from "@/components/standings-view"
 import MatchForm from "@/components/match-form"
+import RecentMatches from "@/components/recent-matches"
 import { airtable } from "@/lib/airtable"
 import { mockPlayers, mockMatches } from "@/static/mockData"
 import type { Player, Match } from "@/types"
@@ -102,8 +103,8 @@ export default function TennisLeagueApp() {
         </div>
 
         {/* Division Overview */}
-        <div className="mb-8">
-          <Accordion type="single" collapsible className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <Accordion type="single" collapsible className="max-w-6xl mx-auto">
             <AccordionItem value="division-summary">
               <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
@@ -133,7 +134,7 @@ export default function TennisLeagueApp() {
                           <Users className="w-3 h-3" />
                           <span>{summary.playerCount} Players</span>
                         </div>
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           <Trophy className="w-3 h-3" />
                           <span>{summary.matchCount} Matches</span>
                         </div>
@@ -144,6 +145,11 @@ export default function TennisLeagueApp() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </div>
+
+        {/* Recent Matches */}
+        <div className="mb-8">
+          <RecentMatches matches={matches} players={players} />
         </div>
 
         {/* Main Content */}
