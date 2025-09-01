@@ -64,13 +64,24 @@ export default function TennisLeagueApp() {
       const divisionMatches = matches.filter(match => {
         const player1 = players.find(p => p.id === match.player1Id)
         const player2 = players.find(p => p.id === match.player2Id)
-        return player1?.division === division || player2?.division === division
+        return player1?.division === division && player2?.division === division
       })
+
+      // Calculate total possible matches for round-robin: n * (n-1) / 2
+      const totalPossibleMatches = divisionPlayers.length > 1 
+        ? (divisionPlayers.length * (divisionPlayers.length - 1)) / 2 
+        : 0
+      
+      const matchPercentage = totalPossibleMatches > 0 
+        ? Math.round((divisionMatches.length / totalPossibleMatches) * 100)
+        : 0
 
       return {
         division,
         playerCount: divisionPlayers.length,
-        matchCount: divisionMatches.length
+        matchCount: divisionMatches.length,
+        totalPossibleMatches,
+        matchPercentage
       }
     })
   }
@@ -136,7 +147,7 @@ export default function TennisLeagueApp() {
                         </div>
                         <div className="flex items-center justify-center gap-2">
                           <Trophy className="w-3 h-3" />
-                          <span>{summary.matchCount} Matches</span>
+                          <span>{summary.matchCount} Matches ({summary.matchPercentage}%)</span>
                         </div>
                       </div>
                     </Card>
