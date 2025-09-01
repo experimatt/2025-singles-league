@@ -167,12 +167,15 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     }
 
     const matchWinner = player1Sets > player2Sets ? formData.player1 : formData.player2
+    const setsFromWinnerPerspective = player1Sets > player2Sets ? `${player1Sets}-${player2Sets}` : `${player2Sets}-${player1Sets}`
+
     return {
       winner: matchWinner,
       player1Sets,
       player2Sets,
       setResults,
       setsPlayed: setResults.length,
+      setsFromWinnerPerspective,
     }
   }
 
@@ -587,8 +590,7 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                     : ""}
                 </p>
                 <p className="text-sm text-blue-800 mb-1">
-                  <strong>Sets:</strong> {matchResult.player1Sets}-
-                  {matchResult.player2Sets}
+                  <strong>Sets:</strong> {matchResult.setsFromWinnerPerspective}
                 </p>
                 <p className="text-sm text-blue-800">
                   <strong>Score:</strong> {matchResult.setResults.join(", ")}

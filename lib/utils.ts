@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Match } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -49,4 +50,42 @@ export function formatDate(dateString: string): string {
     day: 'numeric',
     year: 'numeric'
   })
+}
+
+// Format match score consistently across the application
+export function formatMatchScore(match: Match, fromPlayerId?: string): string {
+  // If we have the original score string, use it (but adjust perspective if needed)
+  if (match.score) {
+    // If we're viewing from a specific player's perspective and need to flip the score
+    if (fromPlayerId) {
+      const matchWonByPlayer1 = match.winnerId === match.player1Id
+      const isViewingFromPlayer1 = fromPlayerId === match.player1Id
+
+      // If score is from winner's perspective and we need to flip it
+      if (matchWonByPlayer1 !== isViewingFromPlayer1) {
+        // Flip the scores to show from current player's perspective
+        return match.score.split(', ').map(set => {
+          const [score1, score2] = set.split('-')
+          return `${score2}-${score1}`
+        }).join(', ')
+      }
+    }
+
+    return match.score
+  }
+
+  // Fallback: reconstruct from setsDetail
+  if (fromPlayerId) {
+    const isPlayer1 = fromPlayerId === match.player1Id
+    return match.setsDetail.map(set => {
+      return isPlayer1
+        ? `${set.player1Games}-${set.player2Games}`
+        : `${set.player2Games}-${set.player1Games}`
+    }).join(', ')
+  }
+
+  // Default: show from player1's perspective
+  return match.setsDetail.map(set => {
+    return `${set.player1Games}-${set.player2Games}`
+  }).join(', ')
 }

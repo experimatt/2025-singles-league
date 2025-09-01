@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trophy, Calendar, Users } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { Match, Player } from "@/types"
-import { formatDate, formatNameForPrivacy, getDivisionColors } from "@/lib/utils"
+import { formatDate, formatNameForPrivacy, getDivisionColors, formatMatchScore } from "@/lib/utils"
 import PlayerMatches from "@/components/player-matches"
 
 interface RecentMatchesProps {
@@ -29,17 +29,7 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
     setSelectedPlayerId(null)
   }
 
-  const formatSetScores = (match: Match) => {
-    // If we have the original score string, use it
-    if (match.score) {
-      return match.score
-    }
-    
-    // Fallback: reconstruct from setsDetail
-    return match.setsDetail.map(set => {
-      return `${set.player1Games}-${set.player2Games}`
-    }).join(', ')
-  }
+
 
   if (recentMatches.length === 0) {
     return (
@@ -77,14 +67,14 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                     return (
                       <div
                         key={match.id}
-                        className="flex items-center justify-between p-3 bg-gray-50/50 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-3 bg-white rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handlePlayerClick(winner.id)}
-                                className="font-medium hover:text-green-600 transition-colors cursor-pointer text-sm text-gray-700"
+                                className="font-medium hover:text-blue-600 hover:underline transition-colors cursor-pointer text-sm text-gray-700"
                               >
                                 {formatNameForPrivacy(winner.name)}
                               </button>
@@ -93,7 +83,7 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handlePlayerClick(loser.id)}
-                                className="font-medium hover:text-green-600 transition-colors cursor-pointer text-sm text-gray-700"
+                                className="font-medium hover:text-blue-600 hover:underline transition-colors cursor-pointer text-sm text-gray-700"
                               >
                                 {formatNameForPrivacy(loser.name)}
                               </button>
@@ -110,10 +100,9 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                             </Badge>
                           </div>
                         </div>
-                        
                         <div className="text-left min-w-[120px]">
                           <div className="text-sm font-mono font-medium text-gray-800">
-                            {formatSetScores(match)}
+                            {formatMatchScore(match, match.winnerId)}
                           </div>
                           <div className="text-xs text-gray-500">
                             Score

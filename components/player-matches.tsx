@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Player, Match } from "@/types"
-import { getDivisionColors, formatNameForPrivacy, formatDate, getDifferentialColor } from "@/lib/utils"
+import { getDivisionColors, formatNameForPrivacy, formatDate, getDifferentialColor, formatMatchScore } from "@/lib/utils"
 
 interface PlayerMatchesProps {
   playerId: string | null
@@ -88,32 +88,7 @@ export default function PlayerMatches({
     }
   }, [playerMatches])
 
-  const formatSetDetails = (match: typeof playerMatches[0]) => {
-    const isPlayer1 = match.player1Id === playerId
 
-    // If we have the original score string, use it (but adjust perspective if needed)
-    if (match.score) {
-      const matchWonByPlayer1 = match.winnerId === match.player1Id
-      
-      // If score is from winner's perspective and we need to flip it
-      if (matchWonByPlayer1 !== isPlayer1) {
-        // Flip the scores to show from current player's perspective
-        return match.score.split(', ').map(set => {
-          const [score1, score2] = set.split('-')
-          return `${score2}-${score1}`
-        }).join(', ')
-      }
-      
-      return match.score
-    }
-    
-    // Fallback: reconstruct from setsDetail
-    return match.setsDetail.map(set => {
-      return isPlayer1 
-        ? `${set.player1Games}-${set.player2Games}`
-        : `${set.player2Games}-${set.player1Games}`
-    }).join(', ')
-  }
 
   if (!player) return null
 
@@ -195,7 +170,7 @@ export default function PlayerMatches({
                             : "Unknown"}
                         </TableCell>
                         <TableCell className="text-center font-mono text-sm">
-                          {formatSetDetails(match)}
+                          {formatMatchScore(match, playerId || undefined)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge
@@ -247,7 +222,7 @@ export default function PlayerMatches({
                     {/* Score and Result */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="font-mono text-gray-700 text-sm">
-                        {formatSetDetails(match)}
+                        {formatMatchScore(match, playerId || undefined)}
                       </div>
                       <Badge
                         variant={match.won ? "default" : "secondary"}
