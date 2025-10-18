@@ -102,13 +102,13 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
           return -1 // a goes before b
         }
         
-        // For players who have both played matches (or both haven't), sort by win percentage
-        if (b.matchWinPercentage !== a.matchWinPercentage) {
-          return b.matchWinPercentage - a.matchWinPercentage
+        // For players who have both played matches (or both haven't), sort by total wins first
+        if (b.matchWins !== a.matchWins) {
+          return b.matchWins - a.matchWins
         }
         
-        // If win percentages are equal, sort by total wins
-        return b.matchWins - a.matchWins
+        // If total wins are equal, sort by win percentage
+        return b.matchWinPercentage - a.matchWinPercentage
       })
     }
 
@@ -209,7 +209,7 @@ export default function StandingsView({ players, matches }: StandingsViewProps) 
             Showing {filteredStats.length} players •&nbsp;
             {selectedDivision === "All Divisions" 
               ? "Grouped by division, ranked within each division" 
-              : "Sorted by match win percentage, then total match wins"}
+              : "Sorted by total match wins, then match win percentage"}
           </div>
         )}
       </CardContent>
