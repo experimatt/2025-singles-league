@@ -144,11 +144,11 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
       const winner = getSetWinner(formData.set1Player1Score, formData.set1Player2Score)
       if (winner === 1) {
         player1Sets = 1
-        setResults.push(`${formData.set1Player1Score}-${formData.set1Player2Score}`)
       } else if (winner === 2) {
         player2Sets = 1
-        setResults.push(`${formData.set1Player2Score}-${formData.set1Player1Score}`)
       }
+      // Always show scores in the order they were entered (Player 1 - Player 2)
+      setResults.push(`${formData.set1Player1Score}-${formData.set1Player2Score}`)
     } else {
       // Standard match
       for (let i = 0; i < sets.length; i++) {
@@ -157,11 +157,11 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
           const winner = getSetWinner(set.p1, set.p2)
           if (winner === 1) {
             player1Sets++
-            setResults.push(`${set.p1}-${set.p2}`)
           } else if (winner === 2) {
             player2Sets++
-            setResults.push(`${set.p2}-${set.p1}`)
           }
+          // Always show scores in the order they were entered (Player 1 - Player 2)
+          setResults.push(`${set.p1}-${set.p2}`)
         }
       }
     }
@@ -332,11 +332,7 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
           Record scores
         </CardTitle>
         <CardDescription>
-          Enter the match details and scores below.
-          <br />
-          Standard matches require at least 2 sets.
-          <br />
-          Pro set matches (to 8 or 10 games) only require 1 set.
+          Enter match details and scores below.
         </CardDescription>
       </CardHeader>
 
@@ -401,17 +397,21 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
             />
           </div>
 
-          {/* Set Scores */}
+          {/* Set Scores - Tennis Broadcast Style */}
           <div className="space-y-4">
-            {/* <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <strong>Match Formats:</strong><br />
-              • <strong>Standard:</strong> Best of 3 sets (6 games per set)<br />
-              • <strong>Pro set:</strong> Single set to 8 or 10 games (win by 2)
-            </div> */}
-            {/* Set 1 */}
-            <div className="space-y-2">
-              <Label>Set 1 (or pro set) *</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Label className="text-base font-medium">Set Scores</Label>
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="grid grid-cols-4 gap-4 items-center">
+                {/* Header row */}
+                <div className="text-sm font-medium text-gray-600"></div>
+                <div className="text-sm font-medium text-gray-600 text-center">Set 1</div>
+                <div className="text-sm font-medium text-gray-600 text-center">Set 2</div>
+                <div className="text-sm font-medium text-gray-600 text-center">Set 3</div>
+
+                {/* Player 1 row */}
+                <div className="text-sm font-medium text-gray-800">
+                  {formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"}
+                </div>
                 <Input
                   id="set1_player1"
                   type="number"
@@ -423,46 +423,14 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                       set1Player1Score: e.target.value,
                     }))
                   }
-                  placeholder={`${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
-                      : "Player 1"
-                  } score`}
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 1 ${
                     formData.player1
                       ? formatNameForPrivacy(formData.player1)
                       : "Player 1"
                   } score`}
                 />
-                <Input
-                  id="set1_player2"
-                  type="number"
-                  min="0"
-                  value={formData.set1Player2Score}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      set1Player2Score: e.target.value,
-                    }))
-                  }
-                  placeholder={`${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
-                      : "Player 2"
-                  } score`}
-                  aria-label={`Set 1 ${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
-                      : "Player 2"
-                  } score`}
-                />
-              </div>
-            </div>
-
-            {/* Set 2 */}
-            <div className="space-y-2">
-              <Label>Set 2 *</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   id="set2_player1"
                   type="number"
@@ -474,15 +442,55 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                       set2Player1Score: e.target.value,
                     }))
                   }
-                  placeholder={`${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
-                      : "Player 1"
-                  } score`}
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 2 ${
                     formData.player1
                       ? formatNameForPrivacy(formData.player1)
                       : "Player 1"
+                  } score`}
+                />
+                <Input
+                  id="set3_player1"
+                  type="number"
+                  min="0"
+                  value={formData.set3Player1Score}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set3Player1Score: e.target.value,
+                    }))
+                  }
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  aria-label={`Set 3 ${
+                    formData.player1
+                      ? formatNameForPrivacy(formData.player1)
+                      : "Player 1"
+                  } score`}
+                />
+
+                {/* Player 2 row */}
+                <div className="text-sm font-medium text-gray-800">
+                  {formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"}
+                </div>
+                <Input
+                  id="set1_player2"
+                  type="number"
+                  min="0"
+                  value={formData.set1Player2Score}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      set1Player2Score: e.target.value,
+                    }))
+                  }
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  aria-label={`Set 1 ${
+                    formData.player2
+                      ? formatNameForPrivacy(formData.player2)
+                      : "Player 2"
                   } score`}
                 />
                 <Input
@@ -496,44 +504,12 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                       set2Player2Score: e.target.value,
                     }))
                   }
-                  placeholder={`${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
-                      : "Player 2"
-                  } score`}
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 2 ${
                     formData.player2
                       ? formatNameForPrivacy(formData.player2)
                       : "Player 2"
-                  } score`}
-                />
-              </div>
-            </div>
-
-            {/* Set 3 */}
-            <div className="space-y-2">
-              <Label>Set 3 (if applicable)</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  id="set3_player1"
-                  type="number"
-                  min="0"
-                  value={formData.set3Player1Score}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      set3Player1Score: e.target.value,
-                    }))
-                  }
-                  placeholder={`${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
-                      : "Player 1"
-                  } score`}
-                  aria-label={`Set 3 ${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
-                      : "Player 1"
                   } score`}
                 />
                 <Input
@@ -547,17 +523,19 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                       set3Player2Score: e.target.value,
                     }))
                   }
-                  placeholder={`${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
-                      : "Player 2"
-                  } score`}
+                  placeholder=""
+                  className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 3 ${
                     formData.player2
                       ? formatNameForPrivacy(formData.player2)
                       : "Player 2"
                   } score`}
                 />
+              </div>
+
+              {/* Help text */}
+              <div className="mt-3 text-xs text-gray-600">
+                <strong>Match Formats:</strong> Standard matches require at least 2 sets. Pro set matches (to 8 or 10 games) only require Set 1.
               </div>
             </div>
           </div>
