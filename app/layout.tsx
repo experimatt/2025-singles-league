@@ -5,7 +5,7 @@ import { Sonner } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Tennis Leagues',
+  title: 'Discord Tennis Leagues',
   description: 'Track standings and submit match results for our in-house tennis leagues',
   generator: 'v0.dev',
 }

@@ -155,7 +155,7 @@ export default function Home() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-10 h-10 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900">
-              Tennis Leagues
+              Discord Tennis League
             </h1>
           </div>
           <p className="text-lg text-gray-600">
