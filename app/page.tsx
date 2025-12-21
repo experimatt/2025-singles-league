@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Loader2, Trophy, Calendar, Users, ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -90,7 +91,7 @@ export default function Home() {
     const stats = leagueStats[league.id]
 
     return (
-      <a
+      <Link
         href={`/${league.slug}`}
         className="block"
       >
@@ -138,7 +139,7 @@ export default function Home() {
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </div>
         </Card>
-      </a>
+      </Link>
     )
   }
 
