@@ -1,6 +1,6 @@
 # Discord Tennis League App
 
-**Live site**: https://experimatt.github.io/2025-singles-league/
+**Live site**: https://experimatt.github.io/discord-tennis-league/
 
 ## Overview
 
@@ -78,7 +78,7 @@ The app is configured to automatically deploy to GitHub Pages when you push to t
 
 2. Push your code to the main branch and the GitHub Action will build and deploy automatically
 
-3. Your app will be available at: `https://yourusername.github.io/2025-singles-league/`
+3. Your app will be available at: `https://experimatt.github.io/discord-tennis-league/`
 
 ## Project Structure
 

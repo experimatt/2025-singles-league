@@ -11,8 +11,8 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  basePath: process.env.NODE_ENV === 'production' ? '/2025-singles-league' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/2025-singles-league/' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/discord-tennis-league' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/discord-tennis-league/' : '',
 }
 
 export default nextConfig
