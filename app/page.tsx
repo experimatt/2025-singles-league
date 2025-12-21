@@ -1,205 +1,106 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Trophy, Users, Plus, Loader2 } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import StandingsView from "@/components/standings-view"
-import MatchForm from "@/components/match-form"
-import RecentMatches from "@/components/recent-matches"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2, Trophy } from "lucide-react"
 import { airtable } from "@/lib/airtable"
-import { mockPlayers, mockMatches } from "@/static/mockData"
-import type { Player, Match } from "@/types"
-import { getDivisionColors } from "@/lib/utils"
+import type { League } from "@/types"
 
-export default function TennisLeagueApp() {
-  const [players, setPlayers] = useState<Player[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
+export default function Home() {
+  const router = useRouter()
+  const [leagues, setLeagues] = useState<League[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("standings")
+  const [error, setError] = useState<string | null>(null)
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-
-      // Load real data from Airtable
-      const [playersData, matchesData] = await Promise.all([airtable.getPlayers(), airtable.getMatches()])
-
-      setPlayers(playersData)
-      setMatches(matchesData)
-    } catch (error) {
-      console.error("Error loading data from Airtable:", error)
-      // Fall back to mock data on error
-      setPlayers(mockPlayers)
-      setMatches(mockMatches)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Initial data load
   useEffect(() => {
-    loadData()
-  }, [])
+    const loadAndRedirect = async () => {
+      try {
+        const activeLeague = await airtable.getActiveLeague()
 
-  const handleMatchSubmit = async (matchData: any) => {
-    console.log("Submitting match to Airtable:", matchData)
-    // Submit to Airtable - let MatchForm handle success/error states
-    await airtable.createMatch(matchData)
-  }
+        if (activeLeague) {
+          router.replace(`/${activeLeague.slug}`)
+          return
+        }
 
-  const handleMatchSuccess = () => {
-    // Refresh data and switch to standings tab
-    loadData()
-    setActiveTab("standings")
-  }
-
-  // Calculate division summaries
-  const divisionSummaries = () => {
-    const divisions = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
-
-    return divisions.map(division => {
-      const divisionPlayers = players.filter(player => player.division === division)
-      const divisionMatches = matches.filter(match => {
-        const player1 = players.find(p => p.id === match.player1Id)
-        const player2 = players.find(p => p.id === match.player2Id)
-        return player1?.division === division && player2?.division === division
-      })
-
-      // Calculate total possible matches for round-robin: n * (n-1) / 2
-      const totalPossibleMatches = divisionPlayers.length > 1 
-        ? (divisionPlayers.length * (divisionPlayers.length - 1)) / 2 
-        : 0
-      
-      const matchPercentage = totalPossibleMatches > 0 
-        ? Math.round((divisionMatches.length / totalPossibleMatches) * 100)
-        : 0
-
-      return {
-        division,
-        playerCount: divisionPlayers.length,
-        matchCount: divisionMatches.length,
-        totalPossibleMatches,
-        matchPercentage
+        // No active league - show league list
+        const allLeagues = await airtable.getLeagues()
+        setLeagues(allLeagues)
+        setLoading(false)
+      } catch (err) {
+        console.error("Error loading leagues:", err)
+        setError("Failed to load leagues. Please try again.")
+        setLoading(false)
       }
-    })
-  }
+    }
+
+    loadAndRedirect()
+  }, [router])
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 mx-auto mb-4 text-lime-400 animate-spin" />
-          <p className="text-lg text-gray-600">Loading tennis league data...</p>
+          <p className="text-lg text-gray-600">Loading tennis leagues...</p>
         </div>
       </div>
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-red-600">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No active league - show list of all leagues
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-10 h-10 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900">
-              Summer Tennis League
+              Tennis Leagues
             </h1>
           </div>
-          <p className="text-lg text-gray-600 mb-2">
-            Track standings and record match results
+          <p className="text-lg text-gray-600">
+            Select a league to view standings and record matches
           </p>
         </div>
 
-        {/* Division Overview */}
-        <div className="mb-4">
-          <Accordion type="single" collapsible className="max-w-6xl mx-auto">
-            <AccordionItem value="division-summary">
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>{players.length} Players</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  <span>{matches.length} Matches Played</span>
-                </div>
-              </div>
-              <AccordionTrigger className="text-center justify-center gap-2">
-                Division Breakdown
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {divisionSummaries().map((summary) => (
-                    <Card
-                      key={summary.division}
-                      className={`p-4 text-center border-2 ${getDivisionColors(
-                        summary.division
-                      )}`}
-                    >
-                      <h3 className="font-medium mb-2">{summary.division}</h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center justify-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span>{summary.playerCount} Players</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <Trophy className="w-3 h-3" />
-                          <span>{summary.matchCount} Matches ({summary.matchPercentage}%)</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-
-        {/* Recent Matches */}
-        <div className="mb-8">
-          <RecentMatches matches={matches} players={players} />
-        </div>
-
-        {/* Main Content */}
-        <Card className="max-w-6xl mx-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger
-                value="standings"
-                className="flex items-center gap-2"
+        {leagues.length === 0 ? (
+          <div className="text-center text-gray-500">
+            <p>No leagues found. Please set up a league in Airtable.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {leagues.map((league) => (
+              <a
+                key={league.id}
+                href={`/${league.slug}`}
+                className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-300"
               >
-                <Trophy className="w-4 h-4" />
-                Standings
-              </TabsTrigger>
-              <TabsTrigger value="submit" className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Record scores
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="standings" className="mt-6">
-              <StandingsView players={players} matches={matches} />
-            </TabsContent>
-
-            <TabsContent value="submit" className="mt-6">
-              <MatchForm
-                players={players}
-                matches={matches}
-                onSubmit={handleMatchSubmit}
-                onSuccess={handleMatchSuccess}
-              />
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Powered by Airtable • Hosted on GitHub Pages</p>
-        </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  {league.name}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {league.divisions.length} divisions
+                </p>
+                {league.startDate && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    {league.startDate} - {league.endDate || "Ongoing"}
+                  </p>
+                )}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

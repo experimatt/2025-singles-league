@@ -12,19 +12,27 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { formatNameForPrivacy } from "@/lib/utils"
-import type { Player, Match } from "@/types"
+import type { LeaguePlayer, Match, League } from "@/types"
 
 interface MatchFormProps {
-  players: Player[]
+  players: LeaguePlayer[]
   matches: Match[]
-  onSubmit: (matchData: any) => void
-  onSuccess?: () => void // Optional callback for successful submission
+  league: League
+  onSubmit: (matchData: {
+    player1Id: string
+    player2Id: string
+    winnerId: string
+    score_summary: string
+    completedAt: string
+    notes?: string
+  }) => Promise<void>
+  onSuccess?: () => void
 }
 
-export default function MatchForm({ players, matches, onSubmit, onSuccess }: MatchFormProps) {
+export default function MatchForm({ players, matches, league, onSubmit, onSuccess }: MatchFormProps) {
   const [formData, setFormData] = useState({
-    player1: "",
-    player2: "",
+    player1Id: "",
+    player2Id: "",
     set1Player1Score: "",
     set1Player2Score: "",
     set2Player1Score: "",
@@ -39,15 +47,12 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
   const existingMatchError = "A match between these players has already been reported for this day (±1)"
 
+  // Get player by ID
+  const getPlayer = (id: string) => players.find(p => p.id === id)
+
   // Helper function to check for existing matches between two players within date range
-  const checkForExistingMatch = (player1Name: string, player2Name: string, matchDate: string) => {
-    if (!player1Name || !player2Name || !matchDate) return null
-
-    // Get player IDs from names
-    const player1 = players.find(p => p.name === player1Name)
-    const player2 = players.find(p => p.name === player2Name)
-
-    if (!player1 || !player2) return null
+  const checkForExistingMatch = (player1Id: string, player2Id: string, matchDate: string) => {
+    if (!player1Id || !player2Id || !matchDate) return null
 
     const selectedDate = new Date(matchDate)
     const oneDayInMs = 24 * 60 * 60 * 1000
@@ -55,13 +60,13 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     return matches.find(match => {
       // Check if this match involves the same two players (in either order)
       const matchPlayerIds = [match.player1Id, match.player2Id]
-      const samePlayers = matchPlayerIds.includes(player1.id) && matchPlayerIds.includes(player2.id)
+      const samePlayers = matchPlayerIds.includes(player1Id) && matchPlayerIds.includes(player2Id)
 
       if (!samePlayers) return false
 
       // Check if match date is within +/- 1 day
-      const matchDate = new Date(match.date)
-      const dateDiff = Math.abs(selectedDate.getTime() - matchDate.getTime())
+      const existingMatchDate = new Date(match.date)
+      const dateDiff = Math.abs(selectedDate.getTime() - existingMatchDate.getTime())
 
       return dateDiff <= oneDayInMs
     })
@@ -95,7 +100,7 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
   // Helper function to check if the match is ready for submission
   const isSubmissionValid = () => {
-    if (!formData.player1 || !formData.player2) return false
+    if (!formData.player1Id || !formData.player2Id) return false
 
     const matchResult = getMatchResult()
 
@@ -132,7 +137,7 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
     let player1Sets = 0
     let player2Sets = 0
-    const setResults = []
+    const setResults: string[] = []
 
     // Check if this is a pro set match (only set 1 has scores)
     const hasSet1 = formData.set1Player1Score && formData.set1Player2Score
@@ -166,11 +171,11 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
       }
     }
 
-    const matchWinner = player1Sets > player2Sets ? formData.player1 : formData.player2
+    const winnerId = player1Sets > player2Sets ? formData.player1Id : formData.player2Id
     const setsFromWinnerPerspective = player1Sets > player2Sets ? `${player1Sets}-${player2Sets}` : `${player2Sets}-${player1Sets}`
 
     return {
-      winner: matchWinner,
+      winnerId,
       player1Sets,
       player2Sets,
       setResults,
@@ -185,20 +190,20 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     setIsSubmitting(true)
 
     // Validation
-    if (!formData.player1 || !formData.player2) {
+    if (!formData.player1Id || !formData.player2Id) {
       setError("Please select both players")
       setIsSubmitting(false)
       return
     }
 
-    if (formData.player1 === formData.player2) {
+    if (formData.player1Id === formData.player2Id) {
       setError("Please select different players")
       setIsSubmitting(false)
       return
     }
 
     // Check for existing match within date range
-    const existingMatch = checkForExistingMatch(formData.player1, formData.player2, formData.completedAt)
+    const existingMatch = checkForExistingMatch(formData.player1Id, formData.player2Id, formData.completedAt)
     if (existingMatch) {
       setError(existingMatchError)
       setIsSubmitting(false)
@@ -244,28 +249,13 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
     const matchResult = getMatchResult()
 
-    // Get player divisions
-    const player1Division = players.find((p) => p.name === formData.player1)?.division || ""
-    const player2Division = players.find((p) => p.name === formData.player2)?.division || ""
-
-    // For cross-division matches, use the first player's division
-    const matchDivision = player1Division === player2Division ? player1Division : player1Division
-
     const matchData = {
-      player1: formData.player1,
-      player2: formData.player2,
-      set1Player1Score: hasSet1 ? Number.parseInt(formData.set1Player1Score) : null,
-      set1Player2Score: hasSet1 ? Number.parseInt(formData.set1Player2Score) : null,
-      set2Player1Score: hasSet2 ? Number.parseInt(formData.set2Player1Score) : null,
-      set2Player2Score: hasSet2 ? Number.parseInt(formData.set2Player2Score) : null,
-      set3Player1Score: hasSet3 ? Number.parseInt(formData.set3Player1Score) : null,
-      set3Player2Score: hasSet3 ? Number.parseInt(formData.set3Player2Score) : null,
-      winner: matchResult.winner,
-      sets_score: `${matchResult.player1Sets}-${matchResult.player2Sets}`,
+      player1Id: formData.player1Id,
+      player2Id: formData.player2Id,
+      winnerId: matchResult.winnerId,
       score_summary: matchResult.setResults.join(", "),
-      division: matchDivision,
       completedAt: formData.completedAt,
-      notes: formData.notes,
+      notes: formData.notes || undefined,
     }
 
     try {
@@ -276,8 +266,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
       // Reset form
       setFormData({
-        player1: "",
-        player2: "",
+        player1Id: "",
+        player2Id: "",
         set1Player1Score: "",
         set1Player2Score: "",
         set2Player1Score: "",
@@ -297,32 +287,36 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
     setIsSubmitting(false)
   }
 
-  const availablePlayer2Options = players.filter((p) => p.name !== formData.player1)
+  const availablePlayer2Options = players.filter((p) => p.id !== formData.player1Id)
   const matchResult = getMatchResult()
 
   // Check for existing match in real-time
-  const existingMatch = formData.player1 && formData.player2 && formData.completedAt
-    ? checkForExistingMatch(formData.player1, formData.player2, formData.completedAt)
+  const existingMatch = formData.player1Id && formData.player2Id && formData.completedAt
+    ? checkForExistingMatch(formData.player1Id, formData.player2Id, formData.completedAt)
     : null
 
-  // Group players by division for cleaner display
-  const divisionOrder = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
+  // Use league divisions for grouping
+  const divisionOrder = league.divisions
 
   const createPlayerGroups = (playerList: typeof players) => {
     return divisionOrder.map(division => ({
       label: division,
       options: playerList
         .filter(player => player.division === division)
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => a.playerName.localeCompare(b.playerName))
         .map(player => ({
-          value: player.name,
-          label: formatNameForPrivacy(player.name),
+          value: player.id,
+          label: formatNameForPrivacy(player.playerName),
         }))
     })).filter(group => group.options.length > 0) // Only include divisions that have players
   }
 
   const playerGroups = createPlayerGroups(players)
   const availablePlayer2Groups = createPlayerGroups(availablePlayer2Options)
+
+  const player1 = getPlayer(formData.player1Id)
+  const player2 = getPlayer(formData.player2Id)
+  const winner = getPlayer(matchResult.winnerId)
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -352,9 +346,9 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               <Label htmlFor="player1">Player 1</Label>
               <Combobox
                 groups={playerGroups}
-                value={formData.player1}
+                value={formData.player1Id}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, player1: value }))
+                  setFormData((prev) => ({ ...prev, player1Id: value }))
                 }
                 placeholder="Select first player"
                 searchPlaceholder="Search players..."
@@ -366,14 +360,14 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               <Label htmlFor="player2">Player 2</Label>
               <Combobox
                 groups={availablePlayer2Groups}
-                value={formData.player2}
+                value={formData.player2Id}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, player2: value }))
+                  setFormData((prev) => ({ ...prev, player2Id: value }))
                 }
                 placeholder="Select second player"
                 searchPlaceholder="Search players..."
                 emptyText="No players found."
-                disabled={!formData.player1}
+                disabled={!formData.player1Id}
               />
             </div>
           </div>
@@ -410,7 +404,7 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
 
                 {/* Player 1 row */}
                 <div className="text-sm font-medium text-gray-800">
-                  {formData.player1 ? formatNameForPrivacy(formData.player1) : "Player 1"}
+                  {player1 ? formatNameForPrivacy(player1.playerName) : "Player 1"}
                 </div>
                 <Input
                   id="set1_player1"
@@ -426,8 +420,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 1 ${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
+                    player1
+                      ? formatNameForPrivacy(player1.playerName)
                       : "Player 1"
                   } score`}
                 />
@@ -445,8 +439,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 2 ${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
+                    player1
+                      ? formatNameForPrivacy(player1.playerName)
                       : "Player 1"
                   } score`}
                 />
@@ -464,15 +458,15 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 3 ${
-                    formData.player1
-                      ? formatNameForPrivacy(formData.player1)
+                    player1
+                      ? formatNameForPrivacy(player1.playerName)
                       : "Player 1"
                   } score`}
                 />
 
                 {/* Player 2 row */}
                 <div className="text-sm font-medium text-gray-800">
-                  {formData.player2 ? formatNameForPrivacy(formData.player2) : "Player 2"}
+                  {player2 ? formatNameForPrivacy(player2.playerName) : "Player 2"}
                 </div>
                 <Input
                   id="set1_player2"
@@ -488,8 +482,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 1 ${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
+                    player2
+                      ? formatNameForPrivacy(player2.playerName)
                       : "Player 2"
                   } score`}
                 />
@@ -507,8 +501,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 2 ${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
+                    player2
+                      ? formatNameForPrivacy(player2.playerName)
                       : "Player 2"
                   } score`}
                 />
@@ -526,8 +520,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
                   placeholder=""
                   className="text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   aria-label={`Set 3 ${
-                    formData.player2
-                      ? formatNameForPrivacy(formData.player2)
+                    player2
+                      ? formatNameForPrivacy(player2.playerName)
                       : "Player 2"
                   } score`}
                 />
@@ -563,8 +557,8 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800 mb-1">
                   <strong>Winner:</strong>{" "}
-                  {matchResult.winner
-                    ? formatNameForPrivacy(matchResult.winner)
+                  {winner
+                    ? formatNameForPrivacy(winner.playerName)
                     : ""}
                 </p>
                 <p className="text-sm text-blue-800 mb-1">
@@ -598,5 +592,5 @@ export default function MatchForm({ players, matches, onSubmit, onSuccess }: Mat
         </form>
       </CardContent>
     </div>
-  );
+  )
 }

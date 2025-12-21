@@ -4,24 +4,28 @@ import { useState } from "react"
 import { Trophy, Medal, Award } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import type { PlayerStats, Player, Match } from "@/types"
+import type { PlayerStats, LeaguePlayer, Match, League } from "@/types"
 import { getDivisionColors, getDifferentialColor, formatNameForPrivacy } from "@/lib/utils"
 import PlayerMatches from "./player-matches"
 
 interface StandingsDesktopProps {
   filteredStats: PlayerStats[]
   selectedDivision: string
-  players: Player[]
+  players: LeaguePlayer[]
   matches: Match[]
+  league: League
 }
 
-export default function StandingsDesktop({ 
-  filteredStats, 
+export default function StandingsDesktop({
+  filteredStats,
   selectedDivision,
   players,
-  matches
+  matches,
+  league
 }: StandingsDesktopProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const divisions = league.divisions
+
   const getRankIcon = (index: number, divisionIndex?: number) => {
     // For "All Divisions" view, calculate rank within division
     if (selectedDivision === "All Divisions" && divisionIndex !== undefined) {
@@ -137,7 +141,6 @@ export default function StandingsDesktop({
             ) : selectedDivision === "All Divisions" ? (
               // Group by divisions for "All Divisions" view
               (() => {
-                const divisions = ["Leonardo", "Donatello", "Michelangelo", "Raphael"]
                 let globalIndex = 0
 
                 return divisions.map((division, divisionIdx) => {
@@ -161,7 +164,7 @@ export default function StandingsDesktop({
                           {formatNameForPrivacy(stat.name)}
                         </TableCell>
                         <TableCell className="border-r">
-                          <Badge variant="outline" className={`text-xs ${getDivisionColors(stat.division)}`}>
+                          <Badge variant="outline" className={`text-xs ${getDivisionColors(stat.division, divisions)}`}>
                             {stat.division}
                           </Badge>
                         </TableCell>
@@ -219,7 +222,7 @@ export default function StandingsDesktop({
                     {formatNameForPrivacy(stat.name)}
                   </TableCell>
                   <TableCell className="border-r">
-                    <Badge variant="outline" className={`text-xs ${getDivisionColors(stat.division)}`}>
+                    <Badge variant="outline" className={`text-xs ${getDivisionColors(stat.division, divisions)}`}>
                       {stat.division}
                     </Badge>
                   </TableCell>
@@ -268,7 +271,8 @@ export default function StandingsDesktop({
         onClose={() => setSelectedPlayerId(null)}
         players={players}
         matches={matches}
+        league={league}
       />
     </>
   )
-} 
+}

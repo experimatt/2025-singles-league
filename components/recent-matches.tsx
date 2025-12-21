@@ -2,18 +2,19 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Calendar, Users } from "lucide-react"
+import { Trophy, Calendar } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import type { Match, Player } from "@/types"
+import type { Match, LeaguePlayer, League } from "@/types"
 import { formatDate, formatNameForPrivacy, getDivisionColors, formatMatchScore } from "@/lib/utils"
 import PlayerMatches from "@/components/player-matches"
 
 interface RecentMatchesProps {
   matches: Match[]
-  players: Player[]
+  players: LeaguePlayer[]
+  league: League
 }
 
-export default function RecentMatches({ matches, players }: RecentMatchesProps) {
+export default function RecentMatches({ matches, players, league }: RecentMatchesProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
   // Get the last 3 matches, sorted by date (most recent first)
@@ -28,8 +29,6 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
   const handleClosePlayerMatches = () => {
     setSelectedPlayerId(null)
   }
-
-
 
   if (recentMatches.length === 0) {
     return (
@@ -57,7 +56,7 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                   {recentMatches.map((match) => {
                     const player1 = players.find(p => p.id === match.player1Id)
                     const player2 = players.find(p => p.id === match.player2Id)
-                    
+
                     if (!player1 || !player2) return null
 
                     const isPlayer1Winner = match.winnerId === match.player1Id
@@ -76,7 +75,7 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                                 onClick={() => handlePlayerClick(winner.id)}
                                 className="font-medium hover:text-blue-600 hover:underline transition-colors cursor-pointer text-sm text-gray-700"
                               >
-                                {formatNameForPrivacy(winner.name)}
+                                {formatNameForPrivacy(winner.playerName)}
                               </button>
                             </div>
                             <span className="text-gray-400 text-sm">defeated</span>
@@ -85,17 +84,17 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
                                 onClick={() => handlePlayerClick(loser.id)}
                                 className="font-medium hover:text-blue-600 hover:underline transition-colors cursor-pointer text-sm text-gray-700"
                               >
-                                {formatNameForPrivacy(loser.name)}
+                                {formatNameForPrivacy(loser.playerName)}
                               </button>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
                               <span>{formatDate(match.date)}</span>
                             </div>
-                            <Badge variant="outline" className={`text-xs ${getDivisionColors(winner.division)}`}>
+                            <Badge variant="outline" className={`text-xs ${getDivisionColors(winner.division, league.divisions)}`}>
                               {winner.division}
                             </Badge>
                           </div>
@@ -124,7 +123,8 @@ export default function RecentMatches({ matches, players }: RecentMatchesProps) 
         onClose={handleClosePlayerMatches}
         players={players}
         matches={matches}
+        league={league}
       />
     </>
   )
-} 
+}

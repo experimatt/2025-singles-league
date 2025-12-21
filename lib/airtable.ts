@@ -1,5 +1,5 @@
 import Airtable from 'airtable'
-import type { Player, Match } from "@/types"
+import type { League, PlayerInfo, LeaguePlayer, Match } from "@/types"
 
 const AIRTABLE_PERSONAL_ACCESS_TOKEN = process.env.NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN
 const AIRTABLE_BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID
@@ -15,28 +15,282 @@ if (AIRTABLE_PERSONAL_ACCESS_TOKEN) {
 const base = Airtable.base(AIRTABLE_BASE_ID!)
 
 class AirtableAPI {
-  async getPlayers(): Promise<Player[]> {
-    try {
-      const records = await base('Players').select().all()
+  // ============ LEAGUES ============
 
-      return records.map(record => ({
-        id: record.id,
-        name: record.get('name') as string || '',
-        division: record.get('group') as string || '',
-        email: '',
-      }))
+  async getLeagues(): Promise<League[]> {
+    try {
+      const records = await base('Leagues').select().all()
+
+      return records.map(record => {
+        // Handle divisions - could be multi-select (array) or text (string)
+        const divisionsRaw = record.get('divisions')
+        let divisions: string[] = []
+
+        if (Array.isArray(divisionsRaw)) {
+          // Multi-select field returns an array
+          divisions = divisionsRaw as string[]
+        } else if (typeof divisionsRaw === 'string') {
+          // Text field returns a comma-separated string
+          divisions = divisionsRaw.split(',').map(d => d.trim()).filter(Boolean)
+        }
+
+        return {
+          id: record.id,
+          name: record.get('name') as string || '',
+          slug: record.get('slug') as string || '',
+          divisions,
+          isActive: record.get('isActive') as boolean || false,
+          startDate: record.get('startDate') as string || '',
+          endDate: record.get('endDate') as string || '',
+        }
+      })
     } catch (error) {
-      console.error('Error fetching players:', error)
+      console.error('Error fetching leagues:', error)
       throw error
     }
   }
 
-  async getMatches(): Promise<Match[]> {
+  async getActiveLeague(): Promise<League | null> {
+    try {
+      const leagues = await this.getLeagues()
+      return leagues.find(l => l.isActive) || leagues[0] || null
+    } catch (error) {
+      console.error('Error fetching active league:', error)
+      throw error
+    }
+  }
+
+  async getLeagueBySlug(slug: string): Promise<League | null> {
+    try {
+      const leagues = await this.getLeagues()
+      return leagues.find(l => l.slug === slug) || null
+    } catch (error) {
+      console.error('Error fetching league by slug:', error)
+      throw error
+    }
+  }
+
+  // ============ PLAYER INFO ============
+
+  async getPlayerInfo(): Promise<PlayerInfo[]> {
+    try {
+      const records = await base('PlayerInfo').select().all()
+
+      return records.map(record => ({
+        id: record.id,
+        name: record.get('name') as string || '',
+        username: record.get('username') as string || '',
+        email: record.get('email') as string || '',
+        phone: record.get('phone') as string || '',
+        location: record.get('location') as string || '',
+        createdAt: record.get('createdAt') as string || '',
+      }))
+    } catch (error) {
+      console.error('Error fetching player info:', error)
+      throw error
+    }
+  }
+
+  async getPlayerInfoByEmail(email: string): Promise<PlayerInfo | null> {
+    try {
+      const records = await base('PlayerInfo')
+        .select({
+          filterByFormula: `{email} = "${email}"`,
+          maxRecords: 1
+        })
+        .all()
+
+      if (records.length === 0) return null
+
+      const record = records[0]
+      return {
+        id: record.id,
+        name: record.get('name') as string || '',
+        username: record.get('username') as string || '',
+        email: record.get('email') as string || '',
+        phone: record.get('phone') as string || '',
+        location: record.get('location') as string || '',
+        createdAt: record.get('createdAt') as string || '',
+      }
+    } catch (error) {
+      console.error('Error fetching player info by email:', error)
+      throw error
+    }
+  }
+
+  async createPlayerInfo(data: {
+    name: string
+    email: string
+    phone?: string
+    location?: string
+  }): Promise<PlayerInfo> {
+    try {
+      const record = await base('PlayerInfo').create({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || '',
+        location: data.location || '',
+        createdAt: new Date().toISOString().split('T')[0],
+      })
+
+      return {
+        id: record.id,
+        name: record.get('name') as string || '',
+        email: record.get('email') as string || '',
+        phone: record.get('phone') as string || '',
+        location: record.get('location') as string || '',
+        createdAt: record.get('createdAt') as string || '',
+      }
+    } catch (error) {
+      console.error('Error creating player info:', error)
+      throw error
+    }
+  }
+
+  // ============ LEAGUE PLAYERS ============
+
+  async getLeaguePlayers(leagueId: string): Promise<LeaguePlayer[]> {
+    try {
+      const records = await base('LeaguePlayers').select().all()
+
+      // DEBUG: Log what we're working with
+      console.log('getLeaguePlayers - Looking for leagueId:', leagueId)
+      console.log('getLeaguePlayers - Total records:', records.length)
+      if (records.length > 0) {
+        console.log('getLeaguePlayers - ALL field names:', Object.keys(records[0].fields))
+        console.log('getLeaguePlayers - First record fields:', records[0].fields)
+        console.log('getLeaguePlayers - First record league field:', records[0].get('league'))
+      }
+
+      // Filter by league ID (linked field is an array)
+      const filteredRecords = records.filter(record => {
+        const leagueIds = record.get('league') as string[] || []
+        return leagueIds.includes(leagueId)
+      })
+
+      return filteredRecords.map(record => {
+        const playerIds = record.get('player') as string[] || []
+        const leagueIds = record.get('league') as string[] || []
+
+        // playerName can be a lookup field (array) or a direct field (string)
+        const playerNameRaw = record.get('playerName')
+        let playerName = ''
+        if (Array.isArray(playerNameRaw)) {
+          playerName = playerNameRaw[0] || ''
+        } else if (typeof playerNameRaw === 'string') {
+          playerName = playerNameRaw
+        }
+
+        return {
+          id: record.id,
+          playerId: playerIds[0] || '',
+          leagueId: leagueIds[0] || '',
+          playerName,
+          division: record.get('group') as string || '',
+          rating: record.get('rating') as string || '',
+        }
+      })
+    } catch (error) {
+      console.error('Error fetching league players:', error)
+      throw error
+    }
+  }
+
+  async createLeaguePlayer(data: {
+    playerId: string
+    leagueId: string
+    division: string
+    rating?: string
+  }): Promise<LeaguePlayer> {
+    try {
+      const record = await base('LeaguePlayers').create({
+        player: [data.playerId],
+        league: [data.leagueId],
+        group: data.division,
+        rating: data.rating || '',
+      })
+
+      const playerIds = record.get('player') as string[] || []
+      const leagueIds = record.get('league') as string[] || []
+
+      // playerName can be a lookup field (array) or a direct field (string)
+      const playerNameRaw = record.get('playerName')
+      let playerName = ''
+      if (Array.isArray(playerNameRaw)) {
+        playerName = playerNameRaw[0] || ''
+      } else if (typeof playerNameRaw === 'string') {
+        playerName = playerNameRaw
+      }
+
+      return {
+        id: record.id,
+        playerId: playerIds[0] || '',
+        leagueId: leagueIds[0] || '',
+        playerName,
+        division: record.get('group') as string || '',
+        rating: record.get('rating') as string || '',
+      }
+    } catch (error) {
+      console.error('Error creating league player:', error)
+      throw error
+    }
+  }
+
+  // Combined signup method: creates PlayerInfo if needed, then creates LeaguePlayer
+  async registerForLeague(data: {
+    name: string
+    email: string
+    phone?: string
+    location?: string
+    leagueId: string
+    division: string
+    rating?: string
+  }): Promise<LeaguePlayer> {
+    try {
+      // Check if PlayerInfo exists by email
+      let playerInfo = await this.getPlayerInfoByEmail(data.email)
+
+      // Create PlayerInfo if not exists
+      if (!playerInfo) {
+        playerInfo = await this.createPlayerInfo({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          location: data.location,
+        })
+      }
+
+      // Create LeaguePlayer record
+      const leaguePlayer = await this.createLeaguePlayer({
+        playerId: playerInfo.id,
+        leagueId: data.leagueId,
+        division: data.division,
+        rating: data.rating,
+      })
+
+      return leaguePlayer
+    } catch (error) {
+      console.error('Error registering for league:', error)
+      throw error
+    }
+  }
+
+  // ============ MATCHES ============
+
+  async getMatches(leagueId?: string): Promise<Match[]> {
     try {
       const records = await base('Matches').select().all()
 
-      return records.map(record => {
-        // Get player record IDs from the players array
+      // DEBUG: Log what we're working with
+      console.log('getMatches - Looking for leagueId:', leagueId)
+      console.log('getMatches - Total records:', records.length)
+      if (records.length > 0) {
+        console.log('getMatches - First record fields:', records[0].fields)
+        console.log('getMatches - First record league field:', records[0].get('league'))
+      }
+
+      const matches = records.map(record => {
+        // Get player record IDs from the players array (these are LeaguePlayer IDs)
         const playersArray = record.get('players') as string[] || []
         const player1Id = playersArray[0] || ''
         const player2Id = playersArray[1] || ''
@@ -44,6 +298,10 @@ class AirtableAPI {
         // Handle winner field (it's an array of record IDs)
         const winnerIds = record.get('winner') as string[] || []
         const winnerId = winnerIds[0] || ''
+
+        // Get league ID from the match (linked field)
+        const leagueIds = record.get('league') as string[] || []
+        const matchLeagueId = leagueIds[0] || ''
 
         // Parse score field to calculate detailed scoring
         const scoreField = record.get('score') as string || ''
@@ -131,8 +389,16 @@ class AirtableAPI {
           winnerId,
           date: record.get('completedAt') as string || '',
           notes: record.get('notes') as string || '',
+          leagueId: matchLeagueId,
         }
       })
+
+      // Filter by league if provided
+      if (leagueId) {
+        return matches.filter(m => m.leagueId === leagueId)
+      }
+
+      return matches
     } catch (error) {
       console.error('Error fetching matches:', error)
       throw error
@@ -140,39 +406,21 @@ class AirtableAPI {
   }
 
   async createMatch(matchData: {
-    player1: string
-    player2: string
-    set1Player1Score: number | null
-    set1Player2Score: number | null
-    set2Player1Score: number | null
-    set2Player2Score: number | null
-    set3Player1Score: number | null
-    set3Player2Score: number | null
-    winner: string
-    sets_score: string
+    player1Id: string  // LeaguePlayer ID
+    player2Id: string  // LeaguePlayer ID
+    winnerId: string   // LeaguePlayer ID
     score_summary: string
-    division: string
     completedAt: string
+    leagueId: string
     notes?: string
   }) {
     try {
-      // First, get all players to find record IDs
-      const players = await this.getPlayers()
-
-      // Find record IDs for the two players
-      const player1Record = players.find(p => p.name === matchData.player1)
-      const player2Record = players.find(p => p.name === matchData.player2)
-      const winnerRecord = players.find(p => p.name === matchData.winner)
-
-      if (!player1Record || !player2Record || !winnerRecord) {
-        throw new Error(`Could not find record IDs for players: ${matchData.player1}, ${matchData.player2}`)
-      }
-
       const record = await base('Matches').create({
-        players: [player1Record.id, player2Record.id], // Array of record IDs
-        winner: [winnerRecord.id], // Array with winner's record ID
-        completedAt: matchData.completedAt, // Use the date from the form
-        score: matchData.score_summary, // Set scores from winner's perspective
+        players: [matchData.player1Id, matchData.player2Id],
+        winner: [matchData.winnerId],
+        completedAt: matchData.completedAt,
+        score: matchData.score_summary,
+        league: [matchData.leagueId],
         notes: matchData.notes || '',
         source: 'API'
       })
@@ -183,6 +431,8 @@ class AirtableAPI {
       throw error
     }
   }
+
+  // ============ UTILITIES ============
 
   async testConnection() {
     try {
@@ -200,19 +450,32 @@ class AirtableAPI {
         }
       }
 
-      // Test Players table access
-      console.log('Testing Players table access...')
-      const players = await this.getPlayers()
-      console.log(`Found ${players.length} players`)
+      // Test Leagues table access
+      console.log('Testing Leagues table access...')
+      const leagues = await this.getLeagues()
+      console.log(`Found ${leagues.length} leagues`)
 
-      // Test Matches table access
-      console.log('Testing Matches table access...')
-      const matches = await this.getMatches()
-      console.log(`Found ${matches.length} matches`)
+      const activeLeague = await this.getActiveLeague()
+      if (activeLeague) {
+        // Test LeaguePlayers table access
+        console.log('Testing LeaguePlayers table access...')
+        const players = await this.getLeaguePlayers(activeLeague.id)
+        console.log(`Found ${players.length} players in ${activeLeague.name}`)
+
+        // Test Matches table access
+        console.log('Testing Matches table access...')
+        const matches = await this.getMatches(activeLeague.id)
+        console.log(`Found ${matches.length} matches in ${activeLeague.name}`)
+
+        return {
+          success: true,
+          message: `Connection successful! Found ${leagues.length} leagues, ${players.length} players and ${matches.length} matches in ${activeLeague.name}.`
+        }
+      }
 
       return {
         success: true,
-        message: `Connection successful! Found ${players.length} players and ${matches.length} matches in your Airtable base.`
+        message: `Connection successful! Found ${leagues.length} leagues (no active league set).`
       }
     } catch (error) {
       console.error('Connection test error:', error)

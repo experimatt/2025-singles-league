@@ -1,9 +1,34 @@
-export interface Player {
+export interface League {
   id: string
   name: string
-  division: string
-  email?: string
+  slug: string
+  divisions: string[]
+  isActive: boolean
+  startDate?: string
+  endDate?: string
 }
+
+export interface PlayerInfo {
+  id: string
+  name: string
+  username?: string
+  email?: string
+  phone?: string
+  location?: string
+  createdAt?: string
+}
+
+export interface LeaguePlayer {
+  id: string
+  playerId: string
+  leagueId: string
+  playerName: string
+  division: string
+  rating?: string
+}
+
+// Alias for backward compatibility during migration
+export type Player = LeaguePlayer
 
 export interface Match {
   id: string
@@ -20,8 +45,9 @@ export interface Match {
   }>
   winnerId: string
   date: string
-  score?: string  // Original score format like "6-2, 3-6, 10-9"
+  score?: string
   notes?: string
+  leagueId?: string
 }
 
 export interface PlayerStats {
