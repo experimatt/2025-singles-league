@@ -94,9 +94,11 @@ export default function RecentMatches({ matches, players, league }: RecentMatche
                               <Calendar className="w-3 h-3" />
                               <span>{formatDate(match.date)}</span>
                             </div>
-                            <Badge variant="outline" className={`text-xs ${getDivisionColors(winner.division, league.divisions)}`}>
-                              {winner.division}
-                            </Badge>
+                            {league.divisions.length > 0 && winner.division && (
+                              <Badge variant="outline" className={`text-xs ${getDivisionColors(winner.division, league.divisions)}`}>
+                                {winner.division}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="text-left min-w-[120px]">

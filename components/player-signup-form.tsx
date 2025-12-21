@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { UserPlus, Mail, Phone, MapPin, Star, Search, User } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,23 +24,23 @@ interface PlayerSignupFormProps {
 }
 
 const RATING_OPTIONS = [
-  { value: "Below 3.0", label: "Below 3.0" },
-  { value: "3.0", label: "3.0" },
-  { value: "3.25", label: "3.25" },
-  { value: "3.5", label: "3.5" },
-  { value: "3.75", label: "3.75" },
-  { value: "4.0", label: "4.0" },
-  { value: "Above 4.0", label: "Above 4.0" },
+  { value: "Below 3.0", label: "Below 3.0", color: "bg-indigo-100 text-indigo-700 border-indigo-300" },
+  { value: "3.0", label: "3.0", color: "bg-sky-100 text-sky-700 border-sky-300" },
+  { value: "3.25", label: "3.25", color: "bg-green-100 text-green-700 border-green-300" },
+  { value: "3.5", label: "3.5", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "3.75", label: "3.75", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  { value: "4.0", label: "4.0", color: "bg-pink-100 text-pink-700 border-pink-300" },
+  { value: "Above 4.0", label: "Above 4.0", color: "bg-violet-100 text-violet-700 border-violet-300" },
 ]
 
 const LOCATION_OPTIONS = [
-  { value: "Minneapolis", label: "Minneapolis" },
-  { value: "St Paul", label: "St Paul" },
-  { value: "Northern Suburbs", label: "Northern Suburbs" },
-  { value: "Eastern Suburbs", label: "Eastern Suburbs" },
-  { value: "Southern Suburbs", label: "Southern Suburbs" },
-  { value: "Western Suburbs", label: "Western Suburbs" },
-  { value: "Somewhere else", label: "Somewhere else" },
+  { value: "Minneapolis", label: "Minneapolis", color: "bg-indigo-100 text-indigo-700 border-indigo-300" },
+  { value: "St Paul", label: "St Paul", color: "bg-sky-100 text-sky-700 border-sky-300" },
+  { value: "Northern Suburbs", label: "Northern Suburbs", color: "bg-green-100 text-green-700 border-green-300" },
+  { value: "Eastern Suburbs", label: "Eastern Suburbs", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "Southern Suburbs", label: "Southern Suburbs", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  { value: "Western Suburbs", label: "Western Suburbs", color: "bg-pink-100 text-pink-700 border-pink-300" },
+  { value: "Somewhere else", label: "Somewhere else", color: "bg-gray-100 text-gray-700 border-gray-300" },
 ]
 
 export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupFormProps) {
@@ -201,7 +202,8 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           Sign up for {league.name}
         </CardTitle>
         <CardDescription>
-          Register to join the league. Select whether you&apos;ve played in a previous league or are a new player.
+          Register to join the league. Select whether you&apos;ve played in a
+          previous league or are a new player.
         </CardDescription>
       </CardHeader>
 
@@ -214,7 +216,11 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           </Alert>
         )}
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "existing" | "new")} className="w-full">
+        <Tabs
+          value={mode}
+          onValueChange={(v) => setMode(v as "existing" | "new")}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="existing" className="flex items-center gap-2">
               <User className="w-4 h-4" />
@@ -231,10 +237,13 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
               {/* Player Search/Select */}
               <div className="space-y-2">
                 <Label>Find Yourself *</Label>
-                <Popover open={playerSearchOpen} onOpenChange={(open) => {
-                  setPlayerSearchOpen(open)
-                  if (!open) setPlayerSearchQuery("") // Reset search when closing
-                }}>
+                <Popover
+                  open={playerSearchOpen}
+                  onOpenChange={(open) => {
+                    setPlayerSearchOpen(open);
+                    if (!open) setPlayerSearchQuery(""); // Reset search when closing
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -246,14 +255,14 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                       )}
                       disabled={loadingPlayers}
                     >
-                      {loadingPlayers ? (
-                        "Loading players..."
-                      ) : selectedPlayer ? (
+                      {selectedPlayer ? (
                         <span className="flex items-center gap-2">
                           <User className="w-4 h-4" />
                           {formatNameForPrivacy(selectedPlayer.name)}
                           {selectedPlayer.username && (
-                            <span className="text-gray-400">@{selectedPlayer.username}</span>
+                            <span className="text-gray-400">
+                              @{selectedPlayer.username}
+                            </span>
                           )}
                         </span>
                       ) : (
@@ -278,26 +287,35 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                           </div>
                         ) : (
                           <>
-                            <CommandEmpty>No player found. Try the &quot;New Player&quot; tab.</CommandEmpty>
+                            <CommandEmpty>
+                              No player found. Try the &quot;New Player&quot;
+                              tab.
+                            </CommandEmpty>
                             <CommandGroup>
                               {existingPlayers
-                                .filter(player =>
-                                  player.name.toLowerCase().includes(playerSearchQuery.toLowerCase())
+                                .filter((player) =>
+                                  player.name
+                                    .toLowerCase()
+                                    .includes(playerSearchQuery.toLowerCase())
                                 )
                                 .map((player) => (
                                   <CommandItem
                                     key={player.id}
                                     value={player.name}
                                     onSelect={() => {
-                                      setSelectedPlayerId(player.id)
-                                      setPlayerSearchOpen(false)
-                                      setPlayerSearchQuery("")
+                                      setSelectedPlayerId(player.id);
+                                      setPlayerSearchOpen(false);
+                                      setPlayerSearchQuery("");
                                     }}
                                   >
                                     <div className="flex flex-col">
-                                      <span className="font-medium">{formatNameForPrivacy(player.name)}</span>
+                                      <span className="font-medium">
+                                        {formatNameForPrivacy(player.name)}
+                                      </span>
                                       {player.username && (
-                                        <span className="text-sm text-gray-500">@{player.username}</span>
+                                        <span className="text-sm text-gray-500">
+                                          @{player.username}
+                                        </span>
                                       )}
                                     </div>
                                   </CommandItem>
@@ -317,7 +335,9 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
               {selectedPlayer && (
                 <Alert className="border-green-300 bg-green-50">
                   <AlertDescription className="text-green-800">
-                    <strong>Welcome back, {selectedPlayer.name.split(' ')[0]}!</strong>
+                    <strong>
+                      Welcome back, {selectedPlayer.name.split(" ")[0]}!
+                    </strong>
                   </AlertDescription>
                 </Alert>
               )}
@@ -350,7 +370,10 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                   type="text"
                   value={formData.username}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, username: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
                   }
                   placeholder="e.g. briguy, kupschake"
                 />
@@ -373,7 +396,7 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Won&apos;t be shared with anyone outside the discord
+                  This won&apos;t be shared with anyone outside the discord
                 </p>
               </div>
 
@@ -394,7 +417,7 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Won&apos;t be shared with anyone outside the discord
+                  This won&apos;t be shared with anyone outside the discord
                 </p>
               </div>
 
@@ -411,12 +434,26 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select your location" />
+                    <SelectValue placeholder="Select your location">
+                      {formData.location && (
+                        <Badge
+                          className={`text-xs border ${
+                            LOCATION_OPTIONS.find(
+                              (o) => o.value === formData.location
+                            )?.color
+                          }`}
+                        >
+                          {formData.location}
+                        </Badge>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {LOCATION_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                        <Badge className={`text-xs border ${option.color}`}>
+                          {option.label}
+                        </Badge>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -437,12 +474,26 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select your rating" />
+                  <SelectValue placeholder="Select your rating">
+                    {formData.rating && (
+                      <Badge
+                        className={`text-xs border ${
+                          RATING_OPTIONS.find(
+                            (o) => o.value === formData.rating
+                          )?.color
+                        }`}
+                      >
+                        {formData.rating}
+                      </Badge>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {RATING_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      <Badge className={`text-xs border ${option.color}`}>
+                        {option.label}
+                      </Badge>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -456,7 +507,12 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
               type="submit"
               variant="default"
               className="w-full bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting || (mode === "existing" ? !isExistingFormValid() : !isNewFormValid())}
+              disabled={
+                isSubmitting ||
+                (mode === "existing"
+                  ? !isExistingFormValid()
+                  : !isNewFormValid())
+              }
             >
               {isSubmitting ? (
                 <>
@@ -474,5 +530,5 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
         </Tabs>
       </CardContent>
     </div>
-  )
+  );
 }

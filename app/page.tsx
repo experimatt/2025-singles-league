@@ -95,7 +95,7 @@ export default function Home() {
         className="block"
       >
         <Card className="p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-300 h-full">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-semibold text-gray-900">

@@ -1,4 +1,4 @@
-# Discord Singles Tennis League App
+# Discord Tennis League App
 
 **Live site**: https://experimatt.github.io/2025-singles-league/
 

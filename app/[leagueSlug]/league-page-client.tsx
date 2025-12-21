@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { notFound } from "next/navigation"
-import { Trophy, Users, Plus, Loader2, UserPlus } from "lucide-react"
+import Link from "next/link"
+import { Trophy, Users, Plus, Loader2, UserPlus, ChevronLeft } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -137,6 +138,13 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            All Leagues
+          </Link>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-10 h-10 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900">

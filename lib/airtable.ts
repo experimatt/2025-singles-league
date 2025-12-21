@@ -132,7 +132,6 @@ class AirtableAPI {
         email: data.email,
         phone: data.phone || '',
         location: data.location || '',
-        createdAt: new Date().toISOString().split('T')[0],
       })
 
       return {
