@@ -1,4 +1,4 @@
-# 2025 Summer Tennis League App
+# Discord Singles Tennis League App
 
 **Live site**: https://experimatt.github.io/2025-singles-league/
 

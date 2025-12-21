@@ -140,7 +140,7 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-10 h-10 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900">
-              {league.name}
+              {league.name} Tennis League
             </h1>
           </div>
           <p className="text-lg text-gray-600 mb-2">
@@ -210,11 +210,21 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
                 <Trophy className="w-4 h-4" />
                 Standings
               </TabsTrigger>
-              <TabsTrigger value="submit" className="flex items-center gap-2">
+              <TabsTrigger
+                value="submit"
+                className="flex items-center gap-2"
+                disabled={!league.isActive}
+                title={!league.isActive ? "This league has ended" : undefined}
+              >
                 <Plus className="w-4 h-4" />
                 Record scores
               </TabsTrigger>
-              <TabsTrigger value="signup" className="flex items-center gap-2">
+              <TabsTrigger
+                value="signup"
+                className="flex items-center gap-2"
+                disabled={!league.isActive}
+                title={!league.isActive ? "This league has ended" : undefined}
+              >
                 <UserPlus className="w-4 h-4" />
                 Sign up
               </TabsTrigger>
