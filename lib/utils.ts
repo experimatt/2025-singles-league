@@ -6,19 +6,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getDivisionColors(division: string) {
-  switch (division) {
-    case "Leonardo":
-      return "border-blue-300 text-blue-500 bg-blue-50"
-    case "Donatello":
-      return "border-purple-300 text-purple-500 bg-purple-50"
-    case "Michelangelo":
-      return "border-orange-300 text-orange-500 bg-orange-50"
-    case "Raphael":
-      return "border-red-300 text-red-500 bg-red-50"
-    default:
-      return "border-gray-300 text-gray-500 bg-gray-50"
+const DIVISION_COLOR_PALETTE = [
+  "border-blue-300 text-blue-500 bg-blue-50",
+  "border-purple-300 text-purple-500 bg-purple-50",
+  "border-orange-300 text-orange-500 bg-orange-50",
+  "border-red-300 text-red-500 bg-red-50",
+  "border-green-300 text-green-500 bg-green-50",
+  "border-yellow-300 text-yellow-500 bg-yellow-50",
+  "border-pink-300 text-pink-500 bg-pink-50",
+  "border-cyan-300 text-cyan-500 bg-cyan-50",
+]
+
+export function getDivisionColors(division: string, allDivisions?: string[]) {
+  if (allDivisions) {
+    const index = allDivisions.indexOf(division)
+    if (index !== -1) {
+      return DIVISION_COLOR_PALETTE[index % DIVISION_COLOR_PALETTE.length]
+    }
   }
+  // Fallback: return gray for unknown divisions
+  return "border-gray-300 text-gray-500 bg-gray-50"
 }
 
 export function getDifferentialColor(differential: number) {

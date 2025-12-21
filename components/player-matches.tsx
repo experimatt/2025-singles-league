@@ -5,29 +5,31 @@ import { Calendar, Trophy, History } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { Player, Match } from "@/types"
+import type { LeaguePlayer, Match, League } from "@/types"
 import { getDivisionColors, formatNameForPrivacy, formatDate, getDifferentialColor, formatMatchScore } from "@/lib/utils"
 
 interface PlayerMatchesProps {
   playerId: string | null
   isOpen: boolean
   onClose: () => void
-  players: Player[]
+  players: LeaguePlayer[]
   matches: Match[]
+  league: League
 }
 
-export default function PlayerMatches({ 
-  playerId, 
-  isOpen, 
-  onClose, 
-  players, 
-  matches 
+export default function PlayerMatches({
+  playerId,
+  isOpen,
+  onClose,
+  players,
+  matches,
+  league
 }: PlayerMatchesProps) {
   const player = players.find(p => p.id === playerId)
-  
+
   const playerMatches = useMemo(() => {
     if (!playerId) return []
-    
+
     return matches
       .filter(match => match.player1Id === playerId || match.player2Id === playerId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -35,14 +37,14 @@ export default function PlayerMatches({
         const opponent = match.player1Id === playerId
           ? players.find(p => p.id === match.player2Id)
           : players.find(p => p.id === match.player1Id)
-        
+
         const isPlayer1 = match.player1Id === playerId
         const playerSets = isPlayer1 ? match.player1Sets : match.player2Sets
         const opponentSets = isPlayer1 ? match.player2Sets : match.player1Sets
         const playerGames = isPlayer1 ? match.player1Games : match.player2Games
         const opponentGames = isPlayer1 ? match.player2Games : match.player1Games
         const won = match.winnerId === playerId
-        
+
         return {
           ...match,
           opponent,
@@ -59,24 +61,24 @@ export default function PlayerMatches({
     const wins = playerMatches.filter(match => match.won).length
     const losses = playerMatches.length - wins
     const winPercentage = playerMatches.length > 0 ? (wins / playerMatches.length) * 100 : 0
-    
+
     // Calculate sets stats
     const totalSetsWon = playerMatches.reduce((sum, match) => sum + match.playerSets, 0)
     const totalSetsLost = playerMatches.reduce((sum, match) => sum + match.opponentSets, 0)
     const totalSets = totalSetsWon + totalSetsLost
     const setWinPercentage = totalSets > 0 ? (totalSetsWon / totalSets) * 100 : 0
-    
+
     // Calculate games stats
     const totalGamesWon = playerMatches.reduce((sum, match) => sum + match.playerGames, 0)
     const totalGamesLost = playerMatches.reduce((sum, match) => sum + match.opponentGames, 0)
     const totalGames = totalGamesWon + totalGamesLost
     const gameWinPercentage = totalGames > 0 ? (totalGamesWon / totalGames) * 100 : 0
     const gamesDifferential = totalGamesWon - totalGamesLost
-    
-    return { 
-      wins, 
-      losses, 
-      winPercentage, 
+
+    return {
+      wins,
+      losses,
+      winPercentage,
       total: playerMatches.length,
       totalSetsWon,
       totalSetsLost,
@@ -88,8 +90,6 @@ export default function PlayerMatches({
     }
   }, [playerMatches])
 
-
-
   if (!player) return null
 
   return (
@@ -98,13 +98,13 @@ export default function PlayerMatches({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 pb-2">
             <History className="w-5 h-5" />
-            {formatNameForPrivacy(player.name)}'s match history
+            {formatNameForPrivacy(player.playerName)}&apos;s match history
           </DialogTitle>
           <DialogDescription asChild>
             <div className="text-sm text-muted-foreground space-y-1 flex flex-col items-start">
             <Badge
               variant="outline"
-              className={`text-xs ${getDivisionColors(player.division)}`}
+              className={`text-xs ${getDivisionColors(player.division, league.divisions)}`}
             >
               {player.division}
             </Badge>
@@ -166,7 +166,7 @@ export default function PlayerMatches({
                         </TableCell>
                         <TableCell className="font-medium">
                           {match.opponent
-                            ? formatNameForPrivacy(match.opponent.name)
+                            ? formatNameForPrivacy(match.opponent.playerName)
                             : "Unknown"}
                         </TableCell>
                         <TableCell className="text-center font-mono text-sm">
@@ -208,7 +208,7 @@ export default function PlayerMatches({
                     <div className="flex items-center justify-between mb-3">
                       <div className="font-medium text-gray-900">
                         {match.opponent
-                          ? formatNameForPrivacy(match.opponent.name)
+                          ? formatNameForPrivacy(match.opponent.playerName)
                           : "Unknown"}
                       </div>
                       <div className="flex items-center gap-2">
@@ -250,5 +250,5 @@ export default function PlayerMatches({
         </div>
       </DialogContent>
     </Dialog>
-  );
-} 
+  )
+}

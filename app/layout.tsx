@@ -5,8 +5,8 @@ import { Sonner } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Summer Tennis League',
-  description: 'Track standings and submit match results for our tennis league',
+  title: 'Tennis Leagues',
+  description: 'Track standings and submit match results for our in-house tennis leagues',
   generator: 'v0.dev',
 }
 
