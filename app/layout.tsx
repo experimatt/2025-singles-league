@@ -5,9 +5,9 @@ import { Sonner } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Discord Tennis Leagues',
+  title: 'Discord Tennis League',
   description: 'Track standings and submit match results for our in-house tennis leagues',
-  generator: 'v0.dev',
+  generator: 'experimatt',
 }
 
 export default function RootLayout({
