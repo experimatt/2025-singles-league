@@ -153,15 +153,6 @@ class AirtableAPI {
     try {
       const records = await base('LeaguePlayers').select().all()
 
-      // DEBUG: Log what we're working with
-      console.log('getLeaguePlayers - Looking for leagueId:', leagueId)
-      console.log('getLeaguePlayers - Total records:', records.length)
-      if (records.length > 0) {
-        console.log('getLeaguePlayers - ALL field names:', Object.keys(records[0].fields))
-        console.log('getLeaguePlayers - First record fields:', records[0].fields)
-        console.log('getLeaguePlayers - First record league field:', records[0].get('league'))
-      }
-
       // Filter by league ID (linked field is an array)
       const filteredRecords = records.filter(record => {
         const leagueIds = record.get('league') as string[] || []
@@ -280,14 +271,6 @@ class AirtableAPI {
   async getMatches(leagueId?: string): Promise<Match[]> {
     try {
       const records = await base('Matches').select().all()
-
-      // DEBUG: Log what we're working with
-      console.log('getMatches - Looking for leagueId:', leagueId)
-      console.log('getMatches - Total records:', records.length)
-      if (records.length > 0) {
-        console.log('getMatches - First record fields:', records[0].fields)
-        console.log('getMatches - First record league field:', records[0].get('league'))
-      }
 
       const matches = records.map(record => {
         // Get player record IDs from the players array (these are LeaguePlayer IDs)

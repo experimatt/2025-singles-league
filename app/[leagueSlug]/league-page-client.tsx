@@ -47,10 +47,6 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
 
       setPlayers(playersData)
       setMatches(matchesData)
-
-      // DEBUG: Log loaded data
-      console.log('LeaguePage - Players loaded:', playersData.length, playersData)
-      console.log('LeaguePage - Matches loaded:', matchesData.length, matchesData)
     } catch (error) {
       console.error("Error loading data from Airtable:", error)
     } finally {
