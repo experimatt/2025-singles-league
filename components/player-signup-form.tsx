@@ -91,7 +91,6 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
     return (
       formData.name.trim() !== "" &&
       formData.email.trim() !== "" &&
-      formData.phone.trim() !== "" &&
       formData.rating !== ""
     )
   }
@@ -145,12 +144,6 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           return
         }
 
-        if (!formData.phone.trim()) {
-          setError("Please enter your phone number")
-          setIsSubmitting(false)
-          return
-        }
-
         if (!formData.rating) {
           setError("Please select your rating")
           setIsSubmitting(false)
@@ -162,7 +155,7 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           name: formData.name.trim(),
           username: formData.username.trim() || undefined,
           email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim(),
+          phone: formData.phone.trim() || undefined,
           location: formData.location || undefined,
           leagueId: league.id,
           division: "", // Division will be assigned by organizer
@@ -404,7 +397,7 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
               <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  What is your phone number? *
+                  What is your phone number?
                 </Label>
                 <Input
                   id="phone"
@@ -414,10 +407,9 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
                     setFormData((prev) => ({ ...prev, phone: e.target.value }))
                   }
                   placeholder="(555) 123-4567"
-                  required
                 />
                 <p className="text-xs text-gray-500">
-                  This won&apos;t be shared with anyone outside the discord
+                  Optional - won&apos;t be shared with anyone outside the discord
                 </p>
               </div>
 

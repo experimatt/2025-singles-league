@@ -126,13 +126,27 @@ class AirtableAPI {
     location?: string
   }): Promise<PlayerInfo> {
     try {
-      const record = await base('PlayerInfo').create({
+      // Build the record data, only including optional fields if they have values
+      // Airtable single-select fields don't accept empty strings
+      const recordData: Partial<FieldSet> = {
         name: data.name,
-        username: data.username || '',
         email: data.email,
-        phone: data.phone || '',
-        location: data.location || '',
-      })
+      }
+
+      // Only set optional fields if they have values
+      if (data.username) {
+        recordData.username = data.username
+      }
+
+      if (data.phone) {
+        recordData.phone = data.phone
+      }
+
+      if (data.location) {
+        recordData.location = data.location
+      }
+
+      const record = await base('PlayerInfo').create(recordData)
 
       return {
         id: record.id,
