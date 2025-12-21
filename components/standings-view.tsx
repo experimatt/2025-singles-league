@@ -93,6 +93,8 @@ export default function StandingsView({ players, matches, league }: StandingsVie
     return Object.values(stats)
   }, [players, matches])
 
+  const hasDivisions = divisions.length > 0
+
   const filteredStats = useMemo(() => {
     const sortPlayers = (players: typeof playerStats) => {
       return players.sort((a, b) => {
@@ -114,6 +116,11 @@ export default function StandingsView({ players, matches, league }: StandingsVie
       })
     }
 
+    // If no divisions, just return a flat sorted list
+    if (!hasDivisions) {
+      return sortPlayers([...playerStats])
+    }
+
     if (selectedDivision === "All Divisions") {
       // Group by division and sort within each division
       const grouped: typeof playerStats = []
@@ -124,13 +131,20 @@ export default function StandingsView({ players, matches, league }: StandingsVie
         grouped.push(...sortedDivisionPlayers)
       })
 
+      // Include players without a division assignment at the end
+      const unassignedPlayers = playerStats.filter(stat => !stat.division || !divisions.includes(stat.division))
+      if (unassignedPlayers.length > 0) {
+        const sortedUnassigned = sortPlayers(unassignedPlayers)
+        grouped.push(...sortedUnassigned)
+      }
+
       return grouped
     } else {
       // Single division view
       const filtered = playerStats.filter((stat) => stat.division === selectedDivision)
       return sortPlayers(filtered)
     }
-  }, [playerStats, selectedDivision, divisions])
+  }, [playerStats, selectedDivision, divisions, hasDivisions])
 
   const matchesPlayedCount = useMemo(() => {
     if (selectedDivision === "All Divisions") {
@@ -155,32 +169,36 @@ export default function StandingsView({ players, matches, league }: StandingsVie
               League Standings
             </CardTitle>
             <CardDescription>
-              {selectedDivision === "All Divisions"
-                ? "All divisions"
-                : `${selectedDivision} division`}{" "}
+              {hasDivisions
+                ? (selectedDivision === "All Divisions"
+                    ? "All divisions"
+                    : `${selectedDivision} division`)
+                : "All players"}{" "}
               • {filteredStats.length} players • {matchesPlayedCount} matches played
             </CardDescription>
           </div>
 
-          <Select value={selectedDivision} onValueChange={setSelectedDivision}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select division" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All Divisions">
-                <Badge className="text-xs border border-gray-300 text-gray-600 bg-gray-50">
-                  All Divisions
-                </Badge>
-              </SelectItem>
-              {divisions.map((division) => (
-                <SelectItem key={division} value={division}>
-                  <Badge className={`text-xs border ${getDivisionColors(division, divisions)}`}>
-                    {division}
+          {hasDivisions && (
+            <Select value={selectedDivision} onValueChange={setSelectedDivision}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select division" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Divisions">
+                  <Badge className="text-xs border border-gray-300 text-gray-600 bg-gray-50">
+                    All Divisions
                   </Badge>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {divisions.map((division) => (
+                  <SelectItem key={division} value={division}>
+                    <Badge className={`text-xs border ${getDivisionColors(division, divisions)}`}>
+                      {division}
+                    </Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
 
@@ -210,9 +228,11 @@ export default function StandingsView({ players, matches, league }: StandingsVie
         {filteredStats.length > 0 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
             Showing {filteredStats.length} players •&nbsp;
-            {selectedDivision === "All Divisions"
-              ? "Grouped by division, ranked within each division"
-              : "Sorted by total match wins, then match win percentage"}
+            {!hasDivisions
+              ? "Sorted by total match wins, then match win percentage"
+              : selectedDivision === "All Divisions"
+                ? "Grouped by division, ranked within each division"
+                : "Sorted by total match wins, then match win percentage"}
           </div>
         )}
       </CardContent>

@@ -297,9 +297,24 @@ export default function MatchForm({ players, matches, league, onSubmit, onSucces
 
   // Use league divisions for grouping
   const divisionOrder = league.divisions
+  const hasDivisions = divisionOrder.length > 0
 
   const createPlayerGroups = (playerList: typeof players) => {
-    return divisionOrder.map(division => ({
+    // If no divisions, return all players in a single ungrouped list
+    if (!hasDivisions) {
+      return [{
+        label: "All Players",
+        options: playerList
+          .sort((a, b) => a.playerName.localeCompare(b.playerName))
+          .map(player => ({
+            value: player.id,
+            label: formatNameForPrivacy(player.playerName),
+          }))
+      }]
+    }
+
+    // Group by divisions
+    const groups = divisionOrder.map(division => ({
       label: division,
       options: playerList
         .filter(player => player.division === division)
@@ -308,7 +323,23 @@ export default function MatchForm({ players, matches, league, onSubmit, onSucces
           value: player.id,
           label: formatNameForPrivacy(player.playerName),
         }))
-    })).filter(group => group.options.length > 0) // Only include divisions that have players
+    })).filter(group => group.options.length > 0)
+
+    // Add unassigned players if any
+    const unassignedPlayers = playerList.filter(player => !player.division || !divisionOrder.includes(player.division))
+    if (unassignedPlayers.length > 0) {
+      groups.push({
+        label: "Unassigned",
+        options: unassignedPlayers
+          .sort((a, b) => a.playerName.localeCompare(b.playerName))
+          .map(player => ({
+            value: player.id,
+            label: formatNameForPrivacy(player.playerName),
+          }))
+      })
+    }
+
+    return groups
   }
 
   const playerGroups = createPlayerGroups(players)

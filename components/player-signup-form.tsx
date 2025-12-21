@@ -1,17 +1,21 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { UserPlus, Mail, Phone, MapPin, Star } from "lucide-react"
+import { useState, useEffect } from "react"
+import { UserPlus, Mail, Phone, MapPin, Star, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import { airtable } from "@/lib/airtable"
-import type { League } from "@/types"
+import type { League, PlayerInfo } from "@/types"
+import { cn, formatNameForPrivacy } from "@/lib/utils"
 
 interface PlayerSignupFormProps {
   league: League
@@ -19,31 +23,74 @@ interface PlayerSignupFormProps {
 }
 
 const RATING_OPTIONS = [
-  { value: "2.5", label: "2.5 - Beginner" },
-  { value: "3.0", label: "3.0 - Intermediate" },
-  { value: "3.5", label: "3.5 - Intermediate+" },
-  { value: "4.0", label: "4.0 - Advanced" },
-  { value: "4.5", label: "4.5 - Advanced+" },
-  { value: "5.0", label: "5.0 - Expert" },
+  { value: "Below 3.0", label: "Below 3.0" },
+  { value: "3.0", label: "3.0" },
+  { value: "3.25", label: "3.25" },
+  { value: "3.5", label: "3.5" },
+  { value: "3.75", label: "3.75" },
+  { value: "4.0", label: "4.0" },
+  { value: "Above 4.0", label: "Above 4.0" },
+]
+
+const LOCATION_OPTIONS = [
+  { value: "Minneapolis", label: "Minneapolis" },
+  { value: "St Paul", label: "St Paul" },
+  { value: "Northern Suburbs", label: "Northern Suburbs" },
+  { value: "Eastern Suburbs", label: "Eastern Suburbs" },
+  { value: "Southern Suburbs", label: "Southern Suburbs" },
+  { value: "Western Suburbs", label: "Western Suburbs" },
+  { value: "Somewhere else", label: "Somewhere else" },
 ]
 
 export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupFormProps) {
+  const [mode, setMode] = useState<"existing" | "new">("existing")
+  const [existingPlayers, setExistingPlayers] = useState<PlayerInfo[]>([])
+  const [loadingPlayers, setLoadingPlayers] = useState(true)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
+  const [playerSearchOpen, setPlayerSearchOpen] = useState(false)
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("")
+
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
     phone: "",
     location: "",
-    division: "",
     rating: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  const isFormValid = () => {
+  // Load existing players on mount
+  useEffect(() => {
+    const loadExistingPlayers = async () => {
+      try {
+        const players = await airtable.getPlayerInfo()
+        // Sort alphabetically by name
+        const sortedPlayers = players.sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+        setExistingPlayers(sortedPlayers)
+      } catch (err) {
+        console.error("Error loading existing players:", err)
+      } finally {
+        setLoadingPlayers(false)
+      }
+    }
+    loadExistingPlayers()
+  }, [])
+
+  const selectedPlayer = existingPlayers.find(p => p.id === selectedPlayerId)
+
+  const isExistingFormValid = () => {
+    return selectedPlayerId !== "" && formData.rating !== ""
+  }
+
+  const isNewFormValid = () => {
     return (
       formData.name.trim() !== "" &&
       formData.email.trim() !== "" &&
-      formData.division !== "" &&
+      formData.phone.trim() !== "" &&
       formData.rating !== ""
     )
   }
@@ -53,60 +100,86 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
     setError("")
     setIsSubmitting(true)
 
-    // Basic validation
-    if (!formData.name.trim()) {
-      setError("Please enter your name")
-      setIsSubmitting(false)
-      return
-    }
-
-    if (!formData.email.trim()) {
-      setError("Please enter your email")
-      setIsSubmitting(false)
-      return
-    }
-
-    // Simple email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address")
-      setIsSubmitting(false)
-      return
-    }
-
-    if (!formData.division) {
-      setError("Please select a division")
-      setIsSubmitting(false)
-      return
-    }
-
-    if (!formData.rating) {
-      setError("Please select your self-reported rating")
-      setIsSubmitting(false)
-      return
-    }
-
     try {
-      await airtable.registerForLeague({
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim() || undefined,
-        location: formData.location.trim() || undefined,
-        leagueId: league.id,
-        division: formData.division,
-        rating: formData.rating,
-      })
+      if (mode === "existing") {
+        // Validate existing player selection
+        if (!selectedPlayerId) {
+          setError("Please select yourself from the list")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (!formData.rating) {
+          setError("Please select your self-reported rating")
+          setIsSubmitting(false)
+          return
+        }
+
+        // Create LeaguePlayer record for existing PlayerInfo
+        await airtable.createLeaguePlayer({
+          playerId: selectedPlayerId,
+          leagueId: league.id,
+          division: "", // Division will be assigned by organizer
+          rating: formData.rating,
+        })
+      } else {
+        // New player - validate all fields
+        if (!formData.name.trim()) {
+          setError("Please enter your name")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (!formData.email.trim()) {
+          setError("Please enter your email")
+          setIsSubmitting(false)
+          return
+        }
+
+        // Simple email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(formData.email)) {
+          setError("Please enter a valid email address")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (!formData.phone.trim()) {
+          setError("Please enter your phone number")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (!formData.rating) {
+          setError("Please select your rating")
+          setIsSubmitting(false)
+          return
+        }
+
+        // Create PlayerInfo and LeaguePlayer
+        await airtable.registerForLeague({
+          name: formData.name.trim(),
+          username: formData.username.trim() || undefined,
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          location: formData.location || undefined,
+          leagueId: league.id,
+          division: "", // Division will be assigned by organizer
+          rating: formData.rating,
+        })
+      }
 
       // Show success toast
       toast.success("You've been registered for the league!")
 
       // Reset form
+      setSelectedPlayerId("")
       setFormData({
         name: "",
+        username: "",
         email: "",
         phone: "",
         location: "",
-        division: "",
         rating: "",
       })
 
@@ -128,7 +201,7 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           Sign up for {league.name}
         </CardTitle>
         <CardDescription>
-          Register to join the league. Fill out the form below and you&apos;ll be added to the roster.
+          Register to join the league. Select whether you&apos;ve played in a previous league or are a new player.
         </CardDescription>
       </CardHeader>
 
@@ -141,149 +214,264 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "existing" | "new")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="existing" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Returning Player
+            </TabsTrigger>
+            <TabsTrigger value="new" className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              New Player
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email Address *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
-              placeholder="your.email@example.com"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <TabsContent value="existing" className="mt-0 space-y-6">
+              {/* Player Search/Select */}
+              <div className="space-y-2">
+                <Label>Find Yourself *</Label>
+                <Popover open={playerSearchOpen} onOpenChange={(open) => {
+                  setPlayerSearchOpen(open)
+                  if (!open) setPlayerSearchQuery("") // Reset search when closing
+                }}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={playerSearchOpen}
+                      className={cn(
+                        "w-full justify-between",
+                        !selectedPlayerId && "text-muted-foreground"
+                      )}
+                      disabled={loadingPlayers}
+                    >
+                      {loadingPlayers ? (
+                        "Loading players..."
+                      ) : selectedPlayer ? (
+                        <span className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          {formatNameForPrivacy(selectedPlayer.name)}
+                          {selectedPlayer.username && (
+                            <span className="text-gray-400">@{selectedPlayer.username}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <Search className="w-4 h-4" />
+                          Search by name...
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Type your name to search..."
+                        value={playerSearchQuery}
+                        onValueChange={setPlayerSearchQuery}
+                      />
+                      <CommandList>
+                        {playerSearchQuery.length < 2 ? (
+                          <div className="py-6 text-center text-sm text-gray-500">
+                            Start typing to search...
+                          </div>
+                        ) : (
+                          <>
+                            <CommandEmpty>No player found. Try the &quot;New Player&quot; tab.</CommandEmpty>
+                            <CommandGroup>
+                              {existingPlayers
+                                .filter(player =>
+                                  player.name.toLowerCase().includes(playerSearchQuery.toLowerCase())
+                                )
+                                .map((player) => (
+                                  <CommandItem
+                                    key={player.id}
+                                    value={player.name}
+                                    onSelect={() => {
+                                      setSelectedPlayerId(player.id)
+                                      setPlayerSearchOpen(false)
+                                      setPlayerSearchQuery("")
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{formatNameForPrivacy(player.name)}</span>
+                                      {player.username && (
+                                        <span className="text-sm text-gray-500">@{player.username}</span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-gray-500">
+                  Search for your name from previous leagues
+                </p>
+              </div>
 
-          {/* Phone */}
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Phone Number (optional)
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, phone: e.target.value }))
-              }
-              placeholder="(555) 123-4567"
-            />
-          </div>
+              {selectedPlayer && (
+                <Alert className="border-green-300 bg-green-50">
+                  <AlertDescription className="text-green-800">
+                    <strong>Welcome back, {selectedPlayer.name.split(' ')[0]}!</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </TabsContent>
 
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              Location (optional)
-            </Label>
-            <Input
-              id="location"
-              type="text"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, location: e.target.value }))
-              }
-              placeholder="City, State or neighborhood"
-            />
-            <p className="text-xs text-gray-500">
-              Helps with scheduling matches with nearby players
-            </p>
-          </div>
+            <TabsContent value="new" className="mt-0 space-y-6">
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">What is your name? *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="e.g. Stephanie F"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Full name or include your last initial
+                </p>
+              </div>
 
-          {/* Division Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="division">Division *</Label>
-            <Select
-              value={formData.division}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, division: value }))
-              }
+              {/* Discord Username */}
+              <div className="space-y-2">
+                <Label htmlFor="username">What is your Discord username?</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, username: e.target.value }))
+                  }
+                  placeholder="e.g. briguy, kupschake"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  What is your email? *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  placeholder="your.email@example.com"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Won&apos;t be shared with anyone outside the discord
+                </p>
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  What is your phone number? *
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                  }
+                  placeholder="(555) 123-4567"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Won&apos;t be shared with anyone outside the discord
+                </p>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label htmlFor="location" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Where are you located?
+                </Label>
+                <Select
+                  value={formData.location}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, location: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCATION_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            {/* Rating Selection - shown for both modes */}
+            <div className="space-y-2">
+              <Label htmlFor="rating" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                Best guess for your current USTA/NTRP rating? *
+              </Label>
+              <Select
+                value={formData.rating}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, rating: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RATING_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Purely vibes-based, doesn&apos;t have to be official
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              variant="default"
+              className="w-full bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting || (mode === "existing" ? !isExistingFormValid() : !isNewFormValid())}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a division" />
-              </SelectTrigger>
-              <SelectContent>
-                {league.divisions.map((division) => (
-                  <SelectItem key={division} value={division}>
-                    {division}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500">
-              You&apos;ll be placed in this division for league play
-            </p>
-          </div>
-
-          {/* Rating Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="rating" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Self-Reported Rating *
-            </Label>
-            <Select
-              value={formData.rating}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, rating: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select your skill level" />
-              </SelectTrigger>
-              <SelectContent>
-                {RATING_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500">
-              NTRP rating or equivalent. Be honest - it helps with fair matchups!
-            </p>
-          </div>
-
-          <Button
-            type="submit"
-            variant="default"
-            className="w-full bg-green-600 hover:bg-green-700"
-            disabled={isSubmitting || !isFormValid()}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Registering...
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Sign up for {league.name}
-              </>
-            )}
-          </Button>
-        </form>
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Registering...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Sign up for {league.name}
+                </>
+              )}
+            </Button>
+          </form>
+        </Tabs>
       </CardContent>
     </div>
   )

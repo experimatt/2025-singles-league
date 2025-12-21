@@ -1,4 +1,4 @@
-import Airtable from 'airtable'
+import Airtable, { FieldSet } from 'airtable'
 import type { League, PlayerInfo, LeaguePlayer, Match } from "@/types"
 
 const AIRTABLE_PERSONAL_ACCESS_TOKEN = process.env.NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN
@@ -120,6 +120,7 @@ class AirtableAPI {
 
   async createPlayerInfo(data: {
     name: string
+    username?: string
     email: string
     phone?: string
     location?: string
@@ -127,6 +128,7 @@ class AirtableAPI {
     try {
       const record = await base('PlayerInfo').create({
         name: data.name,
+        username: data.username || '',
         email: data.email,
         phone: data.phone || '',
         location: data.location || '',
@@ -136,6 +138,7 @@ class AirtableAPI {
       return {
         id: record.id,
         name: record.get('name') as string || '',
+        username: record.get('username') as string || '',
         email: record.get('email') as string || '',
         phone: record.get('phone') as string || '',
         location: record.get('location') as string || '',
@@ -194,12 +197,23 @@ class AirtableAPI {
     rating?: string
   }): Promise<LeaguePlayer> {
     try {
-      const record = await base('LeaguePlayers').create({
+      // Build the record data, only including optional fields if they have values
+      const recordData: Partial<FieldSet> = {
         player: [data.playerId],
         league: [data.leagueId],
-        group: data.division,
-        rating: data.rating || '',
-      })
+      }
+
+      // Only set group/division if it has a value (Airtable single-select doesn't accept empty strings)
+      if (data.division) {
+        recordData.group = data.division
+      }
+
+      // Only set rating if it has a value
+      if (data.rating) {
+        recordData.rating = data.rating
+      }
+
+      const record = await base('LeaguePlayers').create(recordData)
 
       const playerIds = record.get('player') as string[] || []
       const leagueIds = record.get('league') as string[] || []
@@ -230,6 +244,7 @@ class AirtableAPI {
   // Combined signup method: creates PlayerInfo if needed, then creates LeaguePlayer
   async registerForLeague(data: {
     name: string
+    username?: string
     email: string
     phone?: string
     location?: string
@@ -245,6 +260,7 @@ class AirtableAPI {
       if (!playerInfo) {
         playerInfo = await this.createPlayerInfo({
           name: data.name,
+          username: data.username,
           email: data.email,
           phone: data.phone,
           location: data.location,

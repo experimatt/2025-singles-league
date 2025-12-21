@@ -25,6 +25,7 @@ export default function StandingsMobile({
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const divisions = league.divisions
+  const hasDivisions = divisions.length > 0
 
   const toggleCard = (playerId: string) => {
     const newExpanded = new Set(expandedCards)
@@ -105,13 +106,127 @@ export default function StandingsMobile({
   if (filteredStats.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        No players found for the selected division
+        No players found{hasDivisions ? ' for the selected division' : ''}
       </div>
+    )
+  }
+
+  // No divisions - render flat list
+  if (!hasDivisions) {
+    return (
+      <>
+        <div className="space-y-2">
+          {filteredStats.map((stat, index) => {
+            const isExpanded = expandedCards.has(stat.id)
+
+            return (
+              <div
+                key={stat.id}
+                className="border rounded-lg bg-white transition-all duration-200"
+              >
+                {/* Main Card - Always Visible */}
+                <div
+                  onClick={() => toggleCard(stat.id)}
+                  className="p-4 cursor-pointer hover:bg-black/5 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      {/* Rank */}
+                      <div className="flex-shrink-0">
+                        {getRankIcon(index)}
+                      </div>
+
+                      {/* Name */}
+                      <div className="font-medium text-gray-900 flex-1">
+                        {formatNameForPrivacy(stat.name)}
+                      </div>
+
+                      {/* W-L Record */}
+                      <div className="font-semibold text-gray-700">
+                        {stat.matchWins}-{stat.matchLosses}
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse Icon */}
+                    <div className="ml-2">
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-200/50">
+                    <div className="grid grid-cols-2 gap-4 pt-3 text-sm">
+                      {/* Matches */}
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">Matches</div>
+                        <div className="text-gray-700">
+                          {stat.matchWins}-{stat.matchLosses} ({stat.matchWinPercentage.toFixed(0)}%)
+                        </div>
+                      </div>
+
+                      {/* Sets */}
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">Sets</div>
+                        <div className="text-gray-700">
+                          {stat.setsWon}-{stat.setsLost}
+                        </div>
+                      </div>
+
+                      {/* Games */}
+                      <div className="col-span-2">
+                        <div className="font-semibold text-gray-800 mb-1">Games</div>
+                        <div className="text-gray-700">
+                          {stat.gamesWon}-{stat.gamesLost} (<span className={getDifferentialColor(stat.gamesDifferential)}>
+                            {stat.gamesDifferential > 0 ? "+" : ""}{stat.gamesDifferential}
+                          </span>)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* View Matches Button */}
+                    <div className="pt-3 border-t border-gray-200/50 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedPlayerId(stat.id)
+                        }}
+                        className="w-full flex items-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Matches
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <PlayerMatches
+          playerId={selectedPlayerId}
+          isOpen={selectedPlayerId !== null}
+          onClose={() => setSelectedPlayerId(null)}
+          players={players}
+          matches={matches}
+          league={league}
+        />
+      </>
     )
   }
 
   // Handle "All Divisions" view with division grouping
   if (selectedDivision === "All Divisions") {
+    const unassignedPlayers = filteredStats.filter(stat => !stat.division || !divisions.includes(stat.division))
+
     return (
       <>
         <div className="space-y-4">
@@ -223,6 +338,111 @@ export default function StandingsMobile({
             </div>
           )
         })}
+
+        {/* Unassigned Players */}
+        {unassignedPlayers.length > 0 && (
+          <div className="space-y-2">
+            {/* Unassigned Header */}
+            <div className="px-4 py-3 rounded-lg border font-bold text-gray-500 bg-gray-50">
+              Unassigned
+            </div>
+
+            {/* Unassigned Players */}
+            {unassignedPlayers.map((stat, index) => {
+              const isExpanded = expandedCards.has(stat.id)
+
+              return (
+                <div
+                  key={stat.id}
+                  className="border rounded-lg bg-gray-50 transition-all duration-200"
+                >
+                  {/* Main Card - Always Visible */}
+                  <div
+                    onClick={() => toggleCard(stat.id)}
+                    className="p-4 cursor-pointer hover:bg-black/5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* Rank */}
+                        <div className="flex-shrink-0">
+                          {getRankIcon(index, index)}
+                        </div>
+
+                        {/* Name */}
+                        <div className="font-medium text-gray-900 flex-1">
+                          {formatNameForPrivacy(stat.name)}
+                        </div>
+
+                        {/* W-L Record */}
+                        <div className="font-semibold text-gray-700">
+                          {stat.matchWins}-{stat.matchLosses}
+                        </div>
+                      </div>
+
+                      {/* Expand/Collapse Icon */}
+                      <div className="ml-2">
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-gray-200/50">
+                      <div className="grid grid-cols-2 gap-4 pt-3 text-sm">
+                        {/* Matches */}
+                        <div>
+                          <div className="font-semibold text-gray-800 mb-1">Matches</div>
+                          <div className="text-gray-700">
+                            {stat.matchWins}-{stat.matchLosses} ({stat.matchWinPercentage.toFixed(0)}%)
+                          </div>
+                        </div>
+
+                        {/* Sets */}
+                        <div>
+                          <div className="font-semibold text-gray-800 mb-1">Sets</div>
+                          <div className="text-gray-700">
+                            {stat.setsWon}-{stat.setsLost}
+                          </div>
+                        </div>
+
+                        {/* Games */}
+                        <div className="col-span-2">
+                          <div className="font-semibold text-gray-800 mb-1">Games</div>
+                          <div className="text-gray-700">
+                            {stat.gamesWon}-{stat.gamesLost} (<span className={getDifferentialColor(stat.gamesDifferential)}>
+                              {stat.gamesDifferential > 0 ? "+" : ""}{stat.gamesDifferential}
+                            </span>)
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* View Matches Button */}
+                      <div className="pt-3 border-t border-gray-200/50 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedPlayerId(stat.id)
+                          }}
+                          className="w-full flex items-center gap-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Matches
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <PlayerMatches

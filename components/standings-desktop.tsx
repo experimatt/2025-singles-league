@@ -25,6 +25,7 @@ export default function StandingsDesktop({
 }: StandingsDesktopProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const divisions = league.divisions
+  const hasDivisions = divisions.length > 0
 
   const getRankIcon = (index: number, divisionIndex?: number) => {
     // For "All Divisions" view, calculate rank within division
@@ -70,7 +71,7 @@ export default function StandingsDesktop({
             {/* Grouped Header Row */}
             <TableRow className="border-b-2">
               <TableHead
-                colSpan={3}
+                colSpan={hasDivisions ? 3 : 2}
                 className="text-center font-bold bg-gray-100 text-gray-900 border-r"
               >
                 Player Info
@@ -97,8 +98,10 @@ export default function StandingsDesktop({
             {/* Detail Header Row */}
             <TableRow>
               <TableHead className="w-16 text-gray-900">Rank</TableHead>
-              <TableHead className="text-gray-900">Player</TableHead>
-              <TableHead className="text-gray-900 border-r">&nbsp;&nbsp;Division</TableHead>
+              <TableHead className={`text-gray-900 ${!hasDivisions ? 'border-r' : ''}`}>Player</TableHead>
+              {hasDivisions && (
+                <TableHead className="text-gray-900 border-r">&nbsp;&nbsp;Division</TableHead>
+              )}
               {/* Matches Group */}
               <TableHead className="text-center bg-blue-50 text-gray-900">
                 Won
@@ -132,24 +135,73 @@ export default function StandingsDesktop({
             {filteredStats.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={11}
+                  colSpan={hasDivisions ? 11 : 10}
                   className="text-center py-8 text-gray-500"
                 >
-                  No players found for the selected division
+                  No players found{hasDivisions ? ' for the selected division' : ''}
                 </TableCell>
               </TableRow>
+            ) : !hasDivisions ? (
+              // No divisions - render flat list
+              filteredStats.map((stat, index) => (
+                <TableRow
+                  key={stat.id}
+                  className={index < 3 ? "bg-muted/50" : ""}
+                >
+                  <TableCell className="font-medium">
+                    {getRankIcon(index)}
+                  </TableCell>
+                  <TableCell
+                    className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors border-r"
+                    onClick={() => setSelectedPlayerId(stat.id)}
+                  >
+                    {formatNameForPrivacy(stat.name)}
+                  </TableCell>
+                  {/* Matches */}
+                  <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600">
+                    {stat.matchWins}
+                  </TableCell>
+                  <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600">
+                    {stat.matchLosses}
+                  </TableCell>
+                  <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600 border-r">
+                    {stat.matchWinPercentage.toFixed(0)}%
+                  </TableCell>
+                  {/* Sets */}
+                  <TableCell className="text-center bg-green-50/30 font-normal text-gray-600">
+                    {stat.setsWon}
+                  </TableCell>
+                  <TableCell className="text-center bg-green-50/30 font-normal text-gray-600 border-r">
+                    {stat.setsLost}
+                  </TableCell>
+                  {/* Games */}
+                  <TableCell className="text-center bg-orange-50/30 font-normal text-gray-600">
+                    {stat.gamesWon}
+                  </TableCell>
+                  <TableCell className="text-center bg-orange-50/30 font-normal text-gray-600">
+                    {stat.gamesLost}
+                  </TableCell>
+                  <TableCell
+                    className={`text-center bg-orange-50/30 font-normal ${getDifferentialColor(
+                      stat.gamesDifferential
+                    )}`}
+                  >
+                    {stat.gamesDifferential > 0 ? "+" : ""}
+                    {stat.gamesDifferential}
+                  </TableCell>
+                </TableRow>
+              ))
             ) : selectedDivision === "All Divisions" ? (
               // Group by divisions for "All Divisions" view
               (() => {
-                let globalIndex = 0
+                const rows: React.ReactNode[] = []
 
-                return divisions.map((division, divisionIdx) => {
+                divisions.forEach((division, divisionIdx) => {
                   const divisionPlayers = filteredStats.filter(stat => stat.division === division)
-                  globalIndex += divisionPlayers.length
                   const isAlternateDivision = divisionIdx % 2 === 1 // Shade odd-indexed divisions
 
-                  return divisionPlayers.map((stat, divisionIndex) => {
-                    return (
+                  divisionPlayers.forEach((stat, divisionIndex) => {
+                    rows.push(
                       <TableRow
                         key={stat.id}
                         className={isAlternateDivision ? "bg-muted/50" : ""}
@@ -203,7 +255,67 @@ export default function StandingsDesktop({
                       </TableRow>
                     )
                   })
-                }).flat()
+                })
+
+                // Add unassigned players at the end
+                const unassignedPlayers = filteredStats.filter(stat => !stat.division || !divisions.includes(stat.division))
+                unassignedPlayers.forEach((stat, index) => {
+                  rows.push(
+                    <TableRow
+                      key={stat.id}
+                      className="bg-gray-50/50"
+                    >
+                      <TableCell className="font-medium">
+                        {getRankIcon(index, index)}
+                      </TableCell>
+                      <TableCell
+                        className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                        onClick={() => setSelectedPlayerId(stat.id)}
+                      >
+                        {formatNameForPrivacy(stat.name)}
+                      </TableCell>
+                      <TableCell className="border-r">
+                        <Badge variant="outline" className="text-xs border-gray-300 text-gray-500 bg-gray-50">
+                          Unassigned
+                        </Badge>
+                      </TableCell>
+                      {/* Matches */}
+                      <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600">
+                        {stat.matchWins}
+                      </TableCell>
+                      <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600">
+                        {stat.matchLosses}
+                      </TableCell>
+                      <TableCell className="text-center bg-blue-50/30 font-normal text-gray-600 border-r">
+                        {stat.matchWinPercentage.toFixed(0)}%
+                      </TableCell>
+                      {/* Sets */}
+                      <TableCell className="text-center bg-green-50/30 font-normal text-gray-600">
+                        {stat.setsWon}
+                      </TableCell>
+                      <TableCell className="text-center bg-green-50/30 font-normal text-gray-600 border-r">
+                        {stat.setsLost}
+                      </TableCell>
+                      {/* Games */}
+                      <TableCell className="text-center bg-orange-50/30 font-normal text-gray-600">
+                        {stat.gamesWon}
+                      </TableCell>
+                      <TableCell className="text-center bg-orange-50/30 font-normal text-gray-600">
+                        {stat.gamesLost}
+                      </TableCell>
+                      <TableCell
+                        className={`text-center bg-orange-50/30 font-normal ${getDifferentialColor(
+                          stat.gamesDifferential
+                        )}`}
+                      >
+                        {stat.gamesDifferential > 0 ? "+" : ""}
+                        {stat.gamesDifferential}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+
+                return rows
               })()
             ) : (
               // Single division view

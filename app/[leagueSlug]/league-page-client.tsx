@@ -149,55 +149,59 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
         </div>
 
         {/* Division Overview */}
-        <div className="mb-4">
-          <Accordion type="single" collapsible className="max-w-6xl mx-auto">
-            <AccordionItem value="division-summary">
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>{players.length} Players</span>
+        {league.divisions.length > 0 && matches.length > 0 && (
+          <div className="mb-4">
+            <Accordion type="single" collapsible className="max-w-6xl mx-auto">
+              <AccordionItem value="division-summary">
+                <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    <span>{players.length} Players</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    <span>{matches.length} Matches Played</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  <span>{matches.length} Matches Played</span>
-                </div>
-              </div>
-              <AccordionTrigger className="text-center justify-center gap-2">
-                Division Breakdown
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className={`grid grid-cols-2 md:grid-cols-${Math.min(league.divisions.length, 4)} gap-4`}>
-                  {divisionSummaries().map((summary) => (
-                    <Card
-                      key={summary.division}
-                      className={`p-4 text-center border-2 ${getDivisionColors(
-                        summary.division,
-                        league.divisions
-                      )}`}
-                    >
-                      <h3 className="font-medium mb-2">{summary.division}</h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center justify-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span>{summary.playerCount} Players</span>
+                <AccordionTrigger className="text-center justify-center gap-2">
+                  Division Breakdown
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className={`grid grid-cols-2 md:grid-cols-${Math.min(league.divisions.length, 4)} gap-4`}>
+                    {divisionSummaries().map((summary) => (
+                      <Card
+                        key={summary.division}
+                        className={`p-4 text-center border-2 ${getDivisionColors(
+                          summary.division,
+                          league.divisions
+                        )}`}
+                      >
+                        <h3 className="font-medium mb-2">{summary.division}</h3>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center justify-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{summary.playerCount} Players</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2">
+                            <Trophy className="w-3 h-3" />
+                            <span>{summary.matchCount} Matches ({summary.matchPercentage}%)</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <Trophy className="w-3 h-3" />
-                          <span>{summary.matchCount} Matches ({summary.matchPercentage}%)</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        )}
 
         {/* Recent Matches */}
-        <div className="mb-8">
-          <RecentMatches matches={matches} players={players} league={league} />
-        </div>
+        {matches.length > 0 && (
+          <div className="mb-8">
+            <RecentMatches matches={matches} players={players} league={league} />
+          </div>
+        )}
 
         {/* Main Content */}
         <Card className="max-w-6xl mx-auto">
