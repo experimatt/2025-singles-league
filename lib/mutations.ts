@@ -22,9 +22,13 @@ export function useCreateMatch() {
   return useMutation({
     mutationFn: (data: CreateMatchData) => airtable.createMatch(data),
     onSuccess: (_data, variables) => {
-      // Only invalidate matches for this league - not players or leagues
+      // Invalidate matches and players for this league
+      // Players need refresh since match results affect stats/rankings
       queryClient.invalidateQueries({
         queryKey: queryKeys.matches(variables.leagueId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.leaguePlayers(variables.leagueId),
       })
     },
   })

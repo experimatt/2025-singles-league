@@ -9,9 +9,9 @@ import type { League } from "@/types"
 import { formatDate } from "@/lib/utils"
 
 // Component to fetch and display stats for a single league
-function LeagueStats({ leagueId }: { leagueId: string }) {
-  const { data: players } = useLeaguePlayers(leagueId, true)
-  const { data: matches } = useMatches(leagueId, true)
+function LeagueStats({ leagueId, isActive }: { leagueId: string; isActive: boolean }) {
+  const { data: players } = useLeaguePlayers(leagueId, isActive)
+  const { data: matches } = useMatches(leagueId, isActive)
 
   if (!players || !matches) return null
 
@@ -45,7 +45,7 @@ function LeagueCard({ league }: { league: League }) {
             <div className="space-y-2 text-sm text-gray-500">
               <div className="flex items-center gap-2 flex-wrap">
                 <Users className="w-4 h-4" />
-                <LeagueStats leagueId={league.id} />
+                <LeagueStats leagueId={league.id} isActive={league.isActive} />
                 <span>{league.divisions.length} divisions</span>
               </div>
 

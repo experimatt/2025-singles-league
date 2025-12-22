@@ -110,22 +110,3 @@ export function useLeagueData(slug: string) {
     },
   }
 }
-
-// Hook for home page that fetches leagues and stats for each
-export function useLeaguesWithStats() {
-  const leaguesQuery = useLeagues()
-  const leagues = leaguesQuery.data ?? []
-
-  // Create individual queries for each league's players and matches
-  // These will be cached independently
-  const leagueIds = leagues.map((l) => l.id)
-
-  // We can't use hooks conditionally, so we'll fetch stats differently
-  // The home page will use separate useLeaguePlayers/useMatches calls
-
-  return {
-    leagues,
-    isLoading: leaguesQuery.isLoading,
-    isError: leaguesQuery.isError,
-  }
-}
