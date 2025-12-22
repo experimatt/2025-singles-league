@@ -137,7 +137,7 @@ export default function MatchForm({ players, matches, league, onSubmit, onSucces
 
     let player1Sets = 0
     let player2Sets = 0
-    const setResults: string[] = []
+    const setScoresFromPlayer1Perspective: string[] = []
 
     // Check if this is a pro set match (only set 1 has scores)
     const hasSet1 = formData.set1Player1Score && formData.set1Player2Score
@@ -152,8 +152,7 @@ export default function MatchForm({ players, matches, league, onSubmit, onSucces
       } else if (winner === 2) {
         player2Sets = 1
       }
-      // Always show scores in the order they were entered (Player 1 - Player 2)
-      setResults.push(`${formData.set1Player1Score}-${formData.set1Player2Score}`)
+      setScoresFromPlayer1Perspective.push(`${formData.set1Player1Score}-${formData.set1Player2Score}`)
     } else {
       // Standard match
       for (let i = 0; i < sets.length; i++) {
@@ -165,21 +164,30 @@ export default function MatchForm({ players, matches, league, onSubmit, onSucces
           } else if (winner === 2) {
             player2Sets++
           }
-          // Always show scores in the order they were entered (Player 1 - Player 2)
-          setResults.push(`${set.p1}-${set.p2}`)
+          setScoresFromPlayer1Perspective.push(`${set.p1}-${set.p2}`)
         }
       }
     }
 
     const winnerId = player1Sets > player2Sets ? formData.player1Id : formData.player2Id
-    const setsFromWinnerPerspective = player1Sets > player2Sets ? `${player1Sets}-${player2Sets}` : `${player2Sets}-${player1Sets}`
+    const player1IsWinner = player1Sets > player2Sets
+    const setsFromWinnerPerspective = player1IsWinner ? `${player1Sets}-${player2Sets}` : `${player2Sets}-${player1Sets}`
+
+    // Convert scores to winner's perspective for storage
+    // If Player 1 won, scores are already correct; if Player 2 won, flip each set score
+    const setResultsFromWinnerPerspective = player1IsWinner
+      ? setScoresFromPlayer1Perspective
+      : setScoresFromPlayer1Perspective.map(score => {
+          const [p1Score, p2Score] = score.split('-')
+          return `${p2Score}-${p1Score}`
+        })
 
     return {
       winnerId,
       player1Sets,
       player2Sets,
-      setResults,
-      setsPlayed: setResults.length,
+      setResults: setResultsFromWinnerPerspective,
+      setsPlayed: setScoresFromPlayer1Perspective.length,
       setsFromWinnerPerspective,
     }
   }

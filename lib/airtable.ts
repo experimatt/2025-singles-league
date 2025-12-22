@@ -343,7 +343,7 @@ class AirtableAPI {
 
         if (scoreField && winnerId) {
           // Parse scores like "6-2, 6-0" or "6-0, 3-6, 11-9"
-          // Scores are reported from the WINNER'S perspective
+          // Scores are stored from the WINNER'S perspective (winner's games listed first in each set)
           const sets = scoreField.split(',').map(set => set.trim())
           const winnerIsPlayer1 = winnerId === player1Id
 
