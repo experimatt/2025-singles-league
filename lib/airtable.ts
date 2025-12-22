@@ -34,8 +34,10 @@ class AirtableAPI {
           divisions = divisionsRaw.split(',').map(d => d.trim()).filter(Boolean)
         }
 
-        // standingsMode determines how standings are displayed
-        const standingsMode = record.get('standingsMode') as string || ''
+        // standingsMode determines how standings are displayed. convert to lowercase
+        const standingsMode = (
+          (record.get("standingsMode") as string) || ""
+        ).toLowerCase();
 
         return {
           id: record.id,
@@ -76,18 +78,20 @@ class AirtableAPI {
 
   // ============ PLAYER INFO ============
 
-  async getPlayerInfo(): Promise<PlayerInfo[]> {
+  async getPlayerInfo(): Promise<Pick<PlayerInfo, 'id' | 'name' | 'username'>[]> {
     try {
-      const records = await base('PlayerInfo').select().all()
+      // Only fetch fields needed for the returning player search
+      // Excludes sensitive fields like email, phone, location
+      const records = await base('PlayerInfo')
+        .select({
+          fields: ['name', 'username'],
+        })
+        .all()
 
       return records.map(record => ({
         id: record.id,
         name: record.get('name') as string || '',
         username: record.get('username') as string || '',
-        email: record.get('email') as string || '',
-        phone: record.get('phone') as string || '',
-        location: record.get('location') as string || '',
-        createdAt: record.get('createdAt') as string || '',
       }))
     } catch (error) {
       console.error('Error fetching player info:', error)
@@ -180,7 +184,7 @@ class AirtableAPI {
       })
 
       return filteredRecords.map(record => {
-        const playerIds = record.get('player') as string[] || []
+        const playerIds = record.get('playerInfo') as string[] || []
         const leagueIds = record.get('league') as string[] || []
 
         // playerName can be a lookup field (array) or a direct field (string)
@@ -226,42 +230,42 @@ class AirtableAPI {
     try {
       // Build the record data, only including optional fields if they have values
       const recordData: Partial<FieldSet> = {
-        player: [data.playerId],
+        playerInfo: [data.playerId],
         league: [data.leagueId],
-      }
+      };
 
       // Only set group/division if it has a value (Airtable single-select doesn't accept empty strings)
       if (data.division) {
-        recordData.group = data.division
+        recordData.group = data.division;
       }
 
       // Only set rating if it has a value
       if (data.rating) {
-        recordData.rating = data.rating
+        recordData.rating = data.rating;
       }
 
-      const record = await base('LeaguePlayers').create(recordData)
+      const record = await base("LeaguePlayers").create(recordData);
 
-      const playerIds = record.get('player') as string[] || []
-      const leagueIds = record.get('league') as string[] || []
+      const playerIds = (record.get("playerInfo") as string[]) || [];
+      const leagueIds = (record.get("league") as string[]) || [];
 
       // playerName can be a lookup field (array) or a direct field (string)
-      const playerNameRaw = record.get('playerName')
-      let playerName = ''
+      const playerNameRaw = record.get("playerName");
+      let playerName = "";
       if (Array.isArray(playerNameRaw)) {
-        playerName = playerNameRaw[0] || ''
-      } else if (typeof playerNameRaw === 'string') {
-        playerName = playerNameRaw
+        playerName = playerNameRaw[0] || "";
+      } else if (typeof playerNameRaw === "string") {
+        playerName = playerNameRaw;
       }
 
       return {
         id: record.id,
-        playerId: playerIds[0] || '',
-        leagueId: leagueIds[0] || '',
+        playerId: playerIds[0] || "",
+        leagueId: leagueIds[0] || "",
         playerName,
-        division: record.get('group') as string || '',
-        rating: record.get('rating') as string || '',
-      }
+        division: (record.get("group") as string) || "",
+        rating: (record.get("rating") as string) || "",
+      };
     } catch (error) {
       console.error('Error creating league player:', error)
       throw error

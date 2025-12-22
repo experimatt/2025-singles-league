@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { UserPlus, Mail, Phone, MapPin, Star, Search, User } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
-import { airtable } from "@/lib/airtable"
-import type { League, PlayerInfo } from "@/types"
+import { usePlayerInfo } from "@/lib/queries"
+import { useCreateLeaguePlayer, useRegisterForLeague } from "@/lib/mutations"
+import type { League } from "@/types"
 import { cn, formatNameForPrivacy } from "@/lib/utils"
 
 interface PlayerSignupFormProps {
@@ -45,8 +46,6 @@ const LOCATION_OPTIONS = [
 
 export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupFormProps) {
   const [mode, setMode] = useState<"existing" | "new">("existing")
-  const [existingPlayers, setExistingPlayers] = useState<PlayerInfo[]>([])
-  const [loadingPlayers, setLoadingPlayers] = useState(true)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
   const [playerSearchOpen, setPlayerSearchOpen] = useState(false)
   const [playerSearchQuery, setPlayerSearchQuery] = useState("")
@@ -59,27 +58,18 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
     location: "",
     rating: "",
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  // Load existing players on mount
-  useEffect(() => {
-    const loadExistingPlayers = async () => {
-      try {
-        const players = await airtable.getPlayerInfo()
-        // Sort alphabetically by name
-        const sortedPlayers = players.sort((a, b) =>
-          a.name.localeCompare(b.name)
-        )
-        setExistingPlayers(sortedPlayers)
-      } catch (err) {
-        console.error("Error loading existing players:", err)
-      } finally {
-        setLoadingPlayers(false)
-      }
-    }
-    loadExistingPlayers()
-  }, [])
+  // Use query hook for existing players
+  const { data: playerInfoData, isLoading: loadingPlayers } = usePlayerInfo()
+  const existingPlayers = (playerInfoData ?? []).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )
+
+  // Use mutation hooks
+  const createLeaguePlayerMutation = useCreateLeaguePlayer()
+  const registerForLeagueMutation = useRegisterForLeague()
+  const isSubmitting = createLeaguePlayerMutation.isPending || registerForLeagueMutation.isPending
 
   const selectedPlayer = existingPlayers.find(p => p.id === selectedPlayerId)
 
@@ -98,25 +88,22 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsSubmitting(true)
 
     try {
       if (mode === "existing") {
         // Validate existing player selection
         if (!selectedPlayerId) {
           setError("Please select yourself from the list")
-          setIsSubmitting(false)
           return
         }
 
         if (!formData.rating) {
           setError("Please select your self-reported rating")
-          setIsSubmitting(false)
           return
         }
 
         // Create LeaguePlayer record for existing PlayerInfo
-        await airtable.createLeaguePlayer({
+        await createLeaguePlayerMutation.mutateAsync({
           playerId: selectedPlayerId,
           leagueId: league.id,
           division: "", // Division will be assigned by organizer
@@ -126,13 +113,11 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
         // New player - validate all fields
         if (!formData.name.trim()) {
           setError("Please enter your name")
-          setIsSubmitting(false)
           return
         }
 
         if (!formData.email.trim()) {
           setError("Please enter your email")
-          setIsSubmitting(false)
           return
         }
 
@@ -140,18 +125,16 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(formData.email)) {
           setError("Please enter a valid email address")
-          setIsSubmitting(false)
           return
         }
 
         if (!formData.rating) {
           setError("Please select your rating")
-          setIsSubmitting(false)
           return
         }
 
         // Create PlayerInfo and LeaguePlayer
-        await airtable.registerForLeague({
+        await registerForLeagueMutation.mutateAsync({
           name: formData.name.trim(),
           username: formData.username.trim() || undefined,
           email: formData.email.trim().toLowerCase(),
@@ -183,8 +166,6 @@ export default function PlayerSignupForm({ league, onSuccess }: PlayerSignupForm
       console.error("Registration error:", err)
       setError("Failed to register. Please try again or contact the league organizer.")
     }
-
-    setIsSubmitting(false)
   }
 
   return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Trophy, Users, Plus, Loader2, UserPlus, ChevronLeft } from "lucide-react"
@@ -11,8 +11,8 @@ import StandingsView from "@/components/standings-view"
 import MatchForm from "@/components/match-form"
 import RecentMatches from "@/components/recent-matches"
 import PlayerSignupForm from "@/components/player-signup-form"
-import { airtable } from "@/lib/airtable"
-import type { League, LeaguePlayer, Match } from "@/types"
+import { useLeagueData } from "@/lib/queries"
+import { useCreateMatch } from "@/lib/mutations"
 import { getDivisionColors } from "@/lib/utils"
 
 interface LeaguePageClientProps {
@@ -20,45 +20,10 @@ interface LeaguePageClientProps {
 }
 
 export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) {
-  const [league, setLeague] = useState<League | null>(null)
-  const [players, setPlayers] = useState<LeaguePlayer[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("standings")
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-
-      // First, fetch the league by slug
-      const leagueData = await airtable.getLeagueBySlug(leagueSlug)
-
-      if (!leagueData) {
-        setLeague(null)
-        return
-      }
-
-      setLeague(leagueData)
-
-      // Then fetch players and matches for this league
-      const [playersData, matchesData] = await Promise.all([
-        airtable.getLeaguePlayers(leagueData.id),
-        airtable.getMatches(leagueData.id)
-      ])
-
-      setPlayers(playersData)
-      setMatches(matchesData)
-    } catch (error) {
-      console.error("Error loading data from Airtable:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Initial data load
-  useEffect(() => {
-    loadData()
-  }, [leagueSlug])
+  const { league, players, matches, isLoading } = useLeagueData(leagueSlug)
+  const createMatchMutation = useCreateMatch()
 
   const handleMatchSubmit = async (matchData: {
     player1Id: string
@@ -70,20 +35,19 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
   }) => {
     if (!league) return
 
-    console.log("Submitting match to Airtable:", matchData)
-    await airtable.createMatch({
+    await createMatchMutation.mutateAsync({
       ...matchData,
       leagueId: league.id,
     })
   }
 
   const handleMatchSuccess = () => {
-    loadData()
+    // Cache is automatically invalidated by the mutation
     setActiveTab("standings")
   }
 
   const handleSignupSuccess = () => {
-    loadData()
+    // Cache is automatically invalidated by the mutation in PlayerSignupForm
     setActiveTab("standings")
   }
 
@@ -118,7 +82,7 @@ export default function LeaguePageClient({ leagueSlug }: LeaguePageClientProps) 
     })
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
