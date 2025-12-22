@@ -1,72 +1,99 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Loader2, Trophy, Calendar, Users, ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { airtable } from "@/lib/airtable"
+import { useLeagues, useLeaguePlayers, useMatches } from "@/lib/queries"
 import type { League } from "@/types"
 import { formatDate } from "@/lib/utils"
 
-interface LeagueStats {
-  playerCount: number
-  matchCount: number
+// Component to fetch and display stats for a single league
+function LeagueStats({ leagueId }: { leagueId: string }) {
+  const { data: players } = useLeaguePlayers(leagueId, true)
+  const { data: matches } = useMatches(leagueId, true)
+
+  if (!players || !matches) return null
+
+  return (
+    <>
+      <span>{players.length} players</span>
+      <span className="text-gray-300">•</span>
+      <span>{matches.length} matches</span>
+      <span className="text-gray-300">•</span>
+    </>
+  )
+}
+
+function LeagueCard({ league }: { league: League }) {
+  return (
+    <Link href={`/${league.slug}`} className="block">
+      <Card className="p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-300 h-full">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {league.name}
+              </h2>
+              {league.isActive && (
+                <Badge className="bg-green-100 text-green-800 border-green-300">
+                  Active
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Users className="w-4 h-4" />
+                <LeagueStats leagueId={league.id} />
+                <span>{league.divisions.length} divisions</span>
+              </div>
+
+              {(league.startDate || league.endDate) && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {league.startDate ? formatDate(league.startDate) : "Start TBD"}
+                    {" — "}
+                    {league.endDate ? formatDate(league.endDate) : "Ongoing"}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </div>
+      </Card>
+    </Link>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-8 text-gray-500">
+      <p>{message}</p>
+    </div>
+  )
 }
 
 export default function Home() {
-  const [leagues, setLeagues] = useState<League[]>([])
-  const [leagueStats, setLeagueStats] = useState<Record<string, LeagueStats>>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: leagues, isLoading, isError } = useLeagues()
 
-  useEffect(() => {
-    const loadLeagues = async () => {
-      try {
-        const allLeagues = await airtable.getLeagues()
-        setLeagues(allLeagues)
-
-        // Fetch player and match counts for each league
-        const stats: Record<string, LeagueStats> = {}
-        await Promise.all(
-          allLeagues.map(async (league) => {
-            const [players, matches] = await Promise.all([
-              airtable.getLeaguePlayers(league.id),
-              airtable.getMatches(league.id)
-            ])
-            stats[league.id] = {
-              playerCount: players.length,
-              matchCount: matches.length
-            }
-          })
-        )
-        setLeagueStats(stats)
-
-        setLoading(false)
-      } catch (err) {
-        console.error("Error loading leagues:", err)
-        setError("Failed to load leagues. Please try again.")
-        setLoading(false)
-      }
-    }
-
-    loadLeagues()
-  }, [])
-
-  // Separate leagues into current (active or has no end date or end date is in the future) and past
-  const currentLeagues = leagues.filter(league => {
+  // Separate leagues into current and past
+  const currentLeagues = (leagues ?? []).filter((league) => {
     if (league.isActive) return true
     if (!league.endDate) return true
     return new Date(league.endDate) >= new Date()
   })
 
-  const pastLeagues = leagues.filter(league => {
+  const pastLeagues = (leagues ?? []).filter((league) => {
     if (league.isActive) return false
     if (!league.endDate) return false
     return new Date(league.endDate) < new Date()
   })
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -77,77 +104,15 @@ export default function Home() {
     )
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-red-600">{error}</p>
+          <p className="text-lg text-red-600">Failed to load leagues. Please try again.</p>
         </div>
       </div>
     )
   }
-
-  const LeagueCard = ({ league }: { league: League }) => {
-    const stats = leagueStats[league.id]
-
-    return (
-      <Link
-        href={`/${league.slug}`}
-        className="block"
-      >
-        <Card className="p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-300 h-full">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {league.name}
-                </h2>
-                {league.isActive && (
-                  <Badge className="bg-green-100 text-green-800 border-green-300">
-                    Active
-                  </Badge>
-                )}
-              </div>
-
-              <div className="space-y-2 text-sm text-gray-500">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Users className="w-4 h-4" />
-                  {stats ? (
-                    <>
-                      <span>{stats.playerCount} players</span>
-                      <span className="text-gray-300">•</span>
-                      <span>{stats.matchCount} matches</span>
-                      <span className="text-gray-300">•</span>
-                    </>
-                  ) : null}
-                  <span>{league.divisions.length} divisions</span>
-                </div>
-
-                {(league.startDate || league.endDate) && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {league.startDate ? formatDate(league.startDate) : "Start TBD"}
-                      {" — "}
-                      {league.endDate ? formatDate(league.endDate) : "Ongoing"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </div>
-        </Card>
-      </Link>
-    )
-  }
-
-  const EmptyState = ({ message }: { message: string }) => (
-    <div className="text-center py-8 text-gray-500">
-      <p>{message}</p>
-    </div>
-  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -164,7 +129,7 @@ export default function Home() {
           </p>
         </div>
 
-        {leagues.length === 0 ? (
+        {!leagues || leagues.length === 0 ? (
           <EmptyState message="No leagues found. Please set up a league in Airtable." />
         ) : (
           <div className="max-w-4xl mx-auto space-y-8">

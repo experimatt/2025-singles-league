@@ -90,9 +90,9 @@ export function Combobox({
                   {group.options.map((option) => (
                     <CommandItem
                       key={option.value}
-                      value={option.value}
-                      onSelect={(currentValue) => {
-                        onValueChange?.(currentValue === value ? "" : currentValue)
+                      value={option.label}
+                      onSelect={() => {
+                        onValueChange?.(option.value === value ? "" : option.value)
                         setOpen(false)
                       }}
                       className=""
@@ -113,18 +113,18 @@ export function Combobox({
                 {(options || []).map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.value}
-                    onSelect={(currentValue) => {
-                      onValueChange?.(currentValue === value ? "" : currentValue)
+                    value={option.label}
+                    onSelect={() => {
+                      onValueChange?.(option.value === value ? "" : option.value)
                       setOpen(false)
                     }}
                   >
-                                          <span className={cn(
-                        "font-normal pl-2",
-                        value === option.value && "font-semibold"
-                      )}>
-                        {option.label}
-                      </span>
+                    <span className={cn(
+                      "font-normal pl-2",
+                      value === option.value && "font-semibold"
+                    )}>
+                      {option.label}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
