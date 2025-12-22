@@ -28,6 +28,21 @@ export function getDivisionColors(division: string, allDivisions?: string[]) {
   return "border-gray-300 text-gray-500 bg-gray-50"
 }
 
+// Rating color mapping based on NTRP rating levels
+const RATING_COLORS: Record<string, string> = {
+  "Below 3.0": "border-indigo-300 text-indigo-700 bg-indigo-100",
+  "3.0": "border-sky-300 text-sky-700 bg-sky-100",
+  "3.25": "border-green-300 text-green-700 bg-green-100",
+  "3.5": "border-amber-300 text-amber-700 bg-amber-100",
+  "3.75": "border-orange-300 text-orange-700 bg-orange-100",
+  "4.0": "border-pink-300 text-pink-700 bg-pink-100",
+  "Above 4.0": "border-violet-300 text-violet-700 bg-violet-100",
+}
+
+export function getRatingColors(rating: string): string {
+  return RATING_COLORS[rating] || "border-gray-300 text-gray-500 bg-gray-50"
+}
+
 export function getDifferentialColor(differential: number) {
   if (differential > 0) return "text-green-600";
   if (differential < 0) return "text-red-600";

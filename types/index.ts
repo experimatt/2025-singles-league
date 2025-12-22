@@ -6,6 +6,7 @@ export interface League {
   isActive: boolean
   startDate?: string
   endDate?: string
+  standingsMode?: 'divisions' | 'ratings' // 'divisions' groups by division, 'ratings' shows flat list with ratings
 }
 
 export interface PlayerInfo {
@@ -25,6 +26,7 @@ export interface LeaguePlayer {
   playerName: string
   division: string
   rating?: string
+  username?: string
 }
 
 // Alias for backward compatibility during migration
@@ -54,6 +56,7 @@ export interface PlayerStats {
   id: string
   name: string
   division: string
+  rating?: string
   matchWins: number
   matchLosses: number
   setsWon: number

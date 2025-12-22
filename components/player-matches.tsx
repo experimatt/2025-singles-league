@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { LeaguePlayer, Match, League } from "@/types"
-import { getDivisionColors, formatNameForPrivacy, formatDate, getDifferentialColor, formatMatchScore } from "@/lib/utils"
+import { formatNameForPrivacy, formatDate, getDifferentialColor, formatMatchScore, getRatingColors } from "@/lib/utils"
 
 interface PlayerMatchesProps {
   playerId: string | null
@@ -101,33 +101,45 @@ export default function PlayerMatches({
             {formatNameForPrivacy(player.playerName)}&apos;s match history
           </DialogTitle>
           <DialogDescription asChild>
-            <div className="text-sm text-muted-foreground space-y-1 flex flex-col items-start">
-            <Badge
-              variant="outline"
-              className={`text-xs ${getDivisionColors(player.division, league.divisions)}`}
-            >
-              {player.division}
-            </Badge>
-            <div className="flex items-center">
-              <span className="font-medium pr-1">Matches:</span> {stats.wins}-
-              {stats.losses} ({stats.winPercentage.toFixed(0)}%)
+            <div className="text-sm text-muted-foreground space-y-2 flex flex-col items-start">
+              {/* Discord Handle and Rating */}
+              <div className="flex flex-wrap items-center gap-2">
+                {player.username && (
+                  <div className="flex items-center gap-1 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
+                    <span className="font-medium">@{player.username}</span>
+                  </div>
+                )}
+                {player.rating && (
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${getRatingColors(player.rating)}`}
+                  >
+                    {player.rating}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center">
+                <span className="font-medium pr-1">Matches:</span> {stats.wins}-
+                {stats.losses} ({stats.winPercentage.toFixed(0)}%)
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium pr-1">Sets:</span> {stats.totalSetsWon}-
+                {stats.totalSetsLost} ({stats.setWinPercentage.toFixed(0)}%)
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium pr-1">Games:</span> {stats.totalGamesWon}
+                -{stats.totalGamesLost} (
+                <span className={getDifferentialColor(stats.gamesDifferential)}>
+                  {`${stats.gamesDifferential > 0 ? "+" : ""}${
+                    stats.gamesDifferential
+                  }`}
+                </span>
+                )
+              </div>
             </div>
-            <div className="flex items-center">
-              <span className="font-medium pr-1">Sets:</span> {stats.totalSetsWon}-
-              {stats.totalSetsLost} ({stats.setWinPercentage.toFixed(0)}%)
-            </div>
-            <div className="flex items-center">
-              <span className="font-medium pr-1">Games:</span> {stats.totalGamesWon}
-              -{stats.totalGamesLost} (
-              <span className={getDifferentialColor(stats.gamesDifferential)}>
-                {`${stats.gamesDifferential > 0 ? "+" : ""}${
-                  stats.gamesDifferential
-                }`}
-              </span>
-              )
-            </div>
-          </div>
-        </DialogDescription>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">

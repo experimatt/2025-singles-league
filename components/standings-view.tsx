@@ -18,7 +18,11 @@ interface StandingsViewProps {
 
 export default function StandingsView({ players, matches, league }: StandingsViewProps) {
   const [selectedDivision, setSelectedDivision] = useState<string>("All Divisions")
+
+  // Determine display mode: use league setting, or fallback based on whether divisions exist
   const divisions = league.divisions
+  const useDivisionsMode = league.standingsMode === 'divisions' ||
+    (league.standingsMode !== 'ratings' && divisions.length > 0)
 
   const playerStats = useMemo(() => {
     const stats: { [playerId: string]: PlayerStats } = {}
@@ -29,6 +33,7 @@ export default function StandingsView({ players, matches, league }: StandingsVie
         id: player.id,
         name: player.playerName,
         division: player.division,
+        rating: player.rating,
         matchWins: 0,
         matchLosses: 0,
         setsWon: 0,
@@ -93,8 +98,6 @@ export default function StandingsView({ players, matches, league }: StandingsVie
     return Object.values(stats)
   }, [players, matches])
 
-  const hasDivisions = divisions.length > 0
-
   const filteredStats = useMemo(() => {
     const sortPlayers = (players: typeof playerStats) => {
       return players.sort((a, b) => {
@@ -116,11 +119,12 @@ export default function StandingsView({ players, matches, league }: StandingsVie
       })
     }
 
-    // If no divisions, just return a flat sorted list
-    if (!hasDivisions) {
+    // Ratings mode: just return a flat sorted list
+    if (!useDivisionsMode) {
       return sortPlayers([...playerStats])
     }
 
+    // Divisions mode
     if (selectedDivision === "All Divisions") {
       // Group by division and sort within each division
       const grouped: typeof playerStats = []
@@ -144,10 +148,10 @@ export default function StandingsView({ players, matches, league }: StandingsVie
       const filtered = playerStats.filter((stat) => stat.division === selectedDivision)
       return sortPlayers(filtered)
     }
-  }, [playerStats, selectedDivision, divisions, hasDivisions])
+  }, [playerStats, selectedDivision, divisions, useDivisionsMode])
 
   const matchesPlayedCount = useMemo(() => {
-    if (selectedDivision === "All Divisions") {
+    if (!useDivisionsMode || selectedDivision === "All Divisions") {
       return matches.length
     } else {
       // Count matches where at least one player is in the selected division
@@ -157,7 +161,7 @@ export default function StandingsView({ players, matches, league }: StandingsVie
         return player1?.division === selectedDivision || player2?.division === selectedDivision
       }).length
     }
-  }, [matches, players, selectedDivision])
+  }, [matches, players, selectedDivision, useDivisionsMode])
 
   return (
     <div className="space-y-6">
@@ -169,7 +173,7 @@ export default function StandingsView({ players, matches, league }: StandingsVie
               League Standings
             </CardTitle>
             <CardDescription>
-              {hasDivisions
+              {useDivisionsMode
                 ? (selectedDivision === "All Divisions"
                     ? "All divisions"
                     : `${selectedDivision} division`)
@@ -178,7 +182,7 @@ export default function StandingsView({ players, matches, league }: StandingsVie
             </CardDescription>
           </div>
 
-          {hasDivisions && (
+          {useDivisionsMode && (
             <Select value={selectedDivision} onValueChange={setSelectedDivision}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select division" />
@@ -227,8 +231,7 @@ export default function StandingsView({ players, matches, league }: StandingsVie
 
         {filteredStats.length > 0 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
-            Showing {filteredStats.length} players •&nbsp;
-            {!hasDivisions
+            {!useDivisionsMode
               ? "Sorted by total match wins, then match win percentage"
               : selectedDivision === "All Divisions"
                 ? "Grouped by division, ranked within each division"

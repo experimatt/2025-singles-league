@@ -34,6 +34,9 @@ class AirtableAPI {
           divisions = divisionsRaw.split(',').map(d => d.trim()).filter(Boolean)
         }
 
+        // standingsMode determines how standings are displayed
+        const standingsMode = record.get('standingsMode') as string || ''
+
         return {
           id: record.id,
           name: record.get('name') as string || '',
@@ -42,6 +45,7 @@ class AirtableAPI {
           isActive: record.get('isActive') as boolean || false,
           startDate: record.get('startDate') as string || '',
           endDate: record.get('endDate') as string || '',
+          standingsMode: (standingsMode === 'ratings' ? 'ratings' : standingsMode === 'divisions' ? 'divisions' : undefined) as League['standingsMode'],
         }
       })
     } catch (error) {
@@ -188,6 +192,15 @@ class AirtableAPI {
           playerName = playerNameRaw
         }
 
+        // username is a lookup field from PlayerInfo
+        const usernameRaw = record.get('username')
+        let username = ''
+        if (Array.isArray(usernameRaw)) {
+          username = usernameRaw[0] || ''
+        } else if (typeof usernameRaw === 'string') {
+          username = usernameRaw
+        }
+
         return {
           id: record.id,
           playerId: playerIds[0] || '',
@@ -195,6 +208,7 @@ class AirtableAPI {
           playerName,
           division: record.get('group') as string || '',
           rating: record.get('rating') as string || '',
+          username,
         }
       })
     } catch (error) {
